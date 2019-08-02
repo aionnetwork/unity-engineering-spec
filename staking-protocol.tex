@@ -1,0 +1,393 @@
+\section{Staking and Stake Delegation Protocol}
+
+\subsection{Overview}
+The Unity consensus algorithm combines both proof of work (PoW) and proof of stake (PoS) \cite{WZS19}. This section of the specification outlines the implementation of the PoS subsystem in isolation, to simply exposition. PoS requires system participants to \textit{stake} their Aion network tokens; we specify what it means for a user to \textit{stake}, the mechanisms to perform \textit{staking}, and implementation requirements on the core blockchain protocol, and ancillary user interfaces required to interact with the system. 
+
+\subsubsection{Motivating Delegation}
+In the PoW paradigm, mining pools allow participants with modest hash power to \textit{pool} their resources with strangers to achieve a more reliable outlay of rewards. In PoS networks, \textit{delegation} allows users to transfer their rights to participate in the proof of stake (PoS) protocol to \textit{stake pools}. 
+
+The rationale for stake-delegation is very much in-line with the rationale for hash-power-pooling; just like miners controlling small amounts of hash power cannot be expected to run a full node in order to write blocks on rare occasions, neither should stakers be expected to do so. Furthermore, while miners are generally technically proficient and commit their time to maintaining on-premises infrastructure, owners of stake in the network might lack the expertise, or time to do so; even if one has the willingness to operate a staking node, one might have too little stake to cover operational costs. 
+
+Delegation allows all holders of Aion to contribute, regardless of the amount of stake they own, or their technical capabilities.
+
+\subsection{Opinionated vs. Open}
+We go through the trouble of defining a very specific stake delegation protocol here. Here we're taking a very opinionated approach to design (ie. we are specifiying the things that delegators and pool operators can do in this system). Since we're a smart contract platform, we can make this system very open and say that staking pools can make whatever choice they want in terms of how they implement a delegation protocol (ie. staking rewards payouts, pool lifecycle, etc.) via a smart cotnract and we just expose a very simple interface in the staking contract to enable this. There are several reasons to be opinionated: 
+
+\begin{itemize}
+  \item We can provide a consistent user interface for Aion holders to access the staking pools; i.e. if they understand similar staking paradigms like Cosmos, they have very little cognitive effort to understand how to delegate.  
+  \item In the completely open model, we are opening ourselves up for community participants to decide how the staking works (off-chain, on-chain, different considerations for the security of the staking pools). 
+\end{itemize}
+
+There are two entities in the implementation of this system: 
+\begin{itemize}
+    \item Staking contract: the main contract that manages stake. Primitive (naked) stake delegation is implemented here to ensure that delegated stake cannot be \textit{stolen} by the delegate.
+    \item Delegation contract: implements the protocol for stake delegation. All the implementation details of the life-cycle of the stake while it's delegated to another entity can be managed here.  
+\end{itemize}
+
+We come to a design compromise: we create a small core of operations with an API for a contract or user to call. For naked staking, that API can be called as-is. For non-naked staking (private and public staking), that API can be called by a smart contract. The wallets will support the standard public staking contract, but the private staking contract will also be available for people who are interesting in running a private staking pool. 
+
+A key design goal is a very large number of staking participants in the network, which can be achieved by this design. To bootstrap the staking ecosystem to make it easy for people to stake their coins, we design a public delegation system that is easy to use and we also make it very easy process for technically inclined users of Aion to run a private staking pool. 
+
+We do not go into too much detail about the private staking pool protocol, since it will be effectively the same contract except the return to pool operator would be 0\% (all rewards to delegator) or 100\% (all rewards to operator). and no metadata would need to be hosted. We will probably provide a very simple CLI-based interface to interact with such pools. These pools pay all the rewards to the pool operators.
+
+The systems looks something like this: 
+
+\tikzset{
+    block/.style = {draw, fill=white, rectangle, minimum height=3em, minimum width=3em},
+    pinstyle/.style = {pin edge={to-,thin,black}}
+}
+
+\begin{tikzpicture}[auto,>=latex']
+    \node [block, name=sc, align=center] (sc) {Staking\\Contract};
+    \node [block, right of=sc, node distance=5cm, align=center] (scapi) {Delegation\\API};
+    \node [block, right of=scapi, node distance=5cm, align=center] (dc0) {Public\\Delegation Contract};
+    \node [block, above of=dc0,node distance=1.3cm, align=center] (dc1){Private\\Delegtion Contract};
+    \node [block, below of=dc0,node distance=1.3cm, draw=red!80, line width=1pt] (naked) {Naked Staking};
+    
+    \draw [->] (sc) -- node{$implements$} (scapi);
+    \draw [->] (scapi) -- node{} (dc0);
+    \draw [->] (scapi) -- node{} (dc1);
+    \draw [->, draw=red!80] (scapi) -- node{} (naked);
+\end{tikzpicture}
+
+
+
+
+\subsubsection{Terminology}
+The following are the key terms introduced in this overview section and used throughout the document:
+\begin{itemize}
+    \item \textbf{\textit{Delegation}}
+\end{itemize}
+Delegation allows users to transfer their rights to participate in the proof of stake (PoS) protocol to \textit{stake pools}. Stake pools are run by \textit{stake pool operators}. The user delegating the coins to the stake pool is called the \textit{delegator}. Introducing delegation is important because not every Aion holder can be expected to run a full node that is well-connected to the network in order to write blocks on rare occasions (although that was the entire point of "decentralization"). Some users might lack the expertise or time to do so. Others may not have very little Aion for the cost of running a full node may not be worth it to them. Delegation allows all holders of Aion to participate in the protocol, regardless of their technical abilities and amount of stake they own. 
+- stakeholder 
+
+
+ 
+ 
+ 
+
+\subsection{Delegator Specification}
+
+ In a crypto network there are many categories of coin-holders such as retail investors, funds and institutional investors, venture capitalists etc., to keep things simple we bucket all coin-holders as Delegators.\\
+ 
+ A Delegator is any coin-holder in the network that is looking to stake in the network using third-party services such as staking pools.\\
+ 
+ The actions that a delegator can perform on the network with regards to staking are the following:
+   \begin{itemize}
+       \item A delegator can 'DELEGATE' stake to a pool 
+       \item A delegator can 'MANAGE' rewards earned by staking
+       \item A delegator can 'UNDELEGATE' stake from a pool
+   \end{itemize}
+    
+    
+\subsection{Delegate}
+ As delegators aren't technically sophisticated to run a node on the network and many will not have the minimum amount required to stake on the network. A coin-holder must be able to allocate the staking power of coins to a service provider to be able to earn rewards from the network in exchange for contributing to the security of the network.\\
+ 
+Delegate is the action that a user performs to allocate his stake to a pool operator.\\
+   
+A delegator must have access to the following information to take a decision on which pool to stake with:
+     \begin{itemize}
+      \item List of pools operating in the network 
+      \item Fee charged by the pools
+      \item Expected rewards from staking 
+      \item Expected rewards from staking 
+  \end{itemize}
+    
+The calculation of up-time for a staking pool is not trivial as the state will change over time. 
+
+After delegation, the following information needs to be presented to a delegator:
+ \begin{itemize}
+     \item Coins that can be transferred/spent without any restriction 
+     \item Coins that are locked up in a stake 
+     \item Rewards earned through coins that are staked 
+ \end{itemize}
+
+
+\subsection{Manage}
+Once a delegator has staked his coins on the network, the delegated stake accrues block-rewards and transaction fee proportion to the delegator's stake in the network. A delegator must be able to manage the earned rewards.
+
+Following actions are performed by the delegator to manage the rewards.
+  \begin{itemize}
+      \item A delegator can view all rewards earned through delegation 
+      \item A delegator can withdraw rewards accrued through delegation 
+  \end{itemize}
+  
+Another design consideration is that there is an AUTO-DELEGATE feature which when enabled by the delegator takes the stakes rewards and auto delegates it to the same pool effectively compounding the user's stake.
+
+
+\subsection{Undelegate} 
+Once a delegator has staked on the network, a delegator can withdraw stake from the network via an undelegation process.\\
+
+
+Undelegate is the action that a user performs to withdraw stake from the network. 
+
+Following actions are performed by the delegator to unstake 
+ \begin{itemize}
+      \item A delegator can undelegate stake from a pool
+      \item A delegator can view all stake going through the undelegation period and when they become liquid
+  \end{itemize}
+  
+  
+
+
+
+
+\subsection{Implications for Ecosystem Tools}
+Ecosystem tools should then implement the public delegation protocol (as implemented in the public delegation contract). This means things like the dashboard, wallets (mobile, web or desktop) would basically "express" the opinionated protocol, while leaving the flexibility for third party staking pools to implement custom stake delegation protocol, while not violating major invariants in the staking contract, like: 
+\begin{itemize}
+    \item \textbf{non-custodial(ness)}: delegated stake cannot be stolen by the pool
+    \item \textbf{lock-out enforcement}: there must exist no code-path to un-stake coins without getting hit with the lockout
+    \item \textbf{sovereignty over stake}: never let the pool operator unstake on a user's behalf
+    \item etc. 
+\end{itemize}
+
+\section{Requirements}
+These are requirements for the whole system. These requirements need to broken down into \textit{staking contract requirements} and \textit{delegation contract requirements}
+\subsection{Functional Requirements}
+\begin{itemize}
+    \item \textbf{Visibility of delegation on-chain}: Evidence of delegation on the blockchain
+    \todo{Perhaps we'd want to say "You can not re-delegate stake delegated to you"}
+    \item \textbf{Restricting chained delegation}: You should not be able to re-delegate stake. This could open up various attack vectors and the risks outweigh the benefits.
+    \todo{delegation?}
+    \item \textbf{Cheap re-delegation}: Re-delegation should be as cheap as possible. 
+\end{itemize}
+
+\subsection{Security Requirements}
+\begin{itemize}
+    \item \textbf{Sybil attack protection at the staking pool level}: An adversary can take over the network by registering a large number of stake pools, hoping to accumulate enough stake to mount an attack just by people randomly delegating to them. This attack should be made infeasible by requiring stake pool operators to allocate a finite resource to each individual pool they register; this cannot be the cost of running a node.
+    \item \textbf{Address non-malleability}: If Alice sends coins to Bob, the attacker cannot "steal" the staking rights (and not the coins themselves) in the transfer, without Alice and Bob noticing this attack.  
+    \item \textbf{Mitigate key exposure}: The node run by staking pools will need to have some key that controls all the delegated stake, in order to sign blocks. In case of an incident where the node is compromised, it should be possible to the stake pool operator to revoke the key and replace it with a new one. This should not require any action from the delegator. 
+    \item \textbf{Handle inactive stake pools}: Stake pools can cease to operate (lost keys, interest, etc.); we want to minimize the effect of this to the security and liveness of the system. 
+\end{itemize}
+\subsection{Non-Functional Requirements}
+\begin{itemize}
+    \item \textbf{Asymptotic space and time complexity}: All new rules must be computable within reasonable space and time complexity. 
+    \item \textbf{Minimize economic attacks}: An economic attack arises where the costs incurred by the operators are not covered by the fees on the users of the system. Such situations allow users to impose costs on operators without paying the full costs themselves. 
+\end{itemize}
+
+\section{Pool Operator (Public Delegation) Specification}
+
+To recap, the pool operator is a real-life person responsible primarily for being delegated the right associated with delegated stake. The pool operator must run a full node and maintain very high uptime, to guarantee that they are online to ''catch'' any blocks that they might have won in the lottery.
+In the public delegation protocol the following are the actions that are prescribed (i.e. this is all the pool operator is allowed to do):
+\begin{itemize}
+    \item Register
+    \item Management Actions
+    \item Un-register
+\end{itemize}
+
+\subsection{Register a Staking Pool}
+This is how a pool registers them selves to the public protocol. When they successfully register, they will show up in the wallet interface on the list of pools which are leveraging our pooling protocol. 
+The registering pool must provide the following information: 
+\begin{itemize}
+    \item Ticker (3-4 letters)
+    \item ''Buy-in cost'' 
+    \item Fee charged by pool
+    \item Meta-data content hash: 
+    \item Meta-data: 512 bytes max. All characters are to be UTF8 encoded. 
+        \begin{itemize}
+            \item \textbf{Encoded image}: 256 pixels square, encoded into the JSON
+            \item \textbf{Description}: to tell the users about the pool
+            \item \textbf{Name}: Human readable name for the pool
+            \item \textbf{Tags}: max 10, 35 character wide, used as keywords for filters pools in the wallet UI
+            \item \textbf{URL}: to the homepage of the pool, for additional information 
+        \end{itemize}
+\end{itemize}
+
+Notice that after registration, the ticker cannot change. There is a mechanism to change the fee (see fee-change protocol): Unlike other protocols (eg. Cosmos imposes 20\% max fee), we don't impose any maximum on the fee charged by the pool operators. The fees can change (up to 100\%), BUT when the fee is changed, the wallets must notify the affected accounts. Furthermore, after the fee-change message is received, there is a lock-out period for the fee-change to take effect (2 days). The lockout period is there to ensure that anyone who wants to re-delegate to some other people because of a fee hike can do so. In addition, the meta-data can be changed   
+
+
+
+\subsection{Meta-data Protocol}
+This meta data is so that all wallets who implement the public delegation protocol can retrieve a list of staking pools from a registry on-chain. 
+The stake pool operators are responsible for making sure that the endpoint where this JSON is hosted. JSON must be valid according to the RFC 7159 JSON specification \cite{rfc7159}. The hash of the JSON object must match the content hash provided. 
+Rationale for having a meta-data protocol and not hosting this stuff on-chain. We propose the use of proxy servers to cache the entries. The proxy server shall adaptively implement rules to filter out malicious entries as attackers evolve mechanisms to attack the wallets by embedding malicious content in the metadata via any entry in the payload. The cache entries get invalidated if the content hash changes. The proxy servers poll the delegation contract for the list of stake pools. The wallet would then retrieve all pool lists from the proxy servers as opposed to querying each metaddata url separately. Furthermore, this server is very simple; furthermore, they cannot show forged data as the content hash is stored on-chain. All they can do is censor the list of delegates. In order to avoid centralization, we will opensource the proxy server implementation and encourage different people to run these proxy servers. In addition, wallet should be configurable to query a number of these proxy servers.
+
+If any of the rules are violated, the pool will not be shown in the UI. 
+
+\subsection{Undelegation Rights}
+The only time in the protocol the public delegation protocol can undelegate stake is if they shut down the pool. If they want to withdraw their bond, they shoudn't be able to undelegeate. In the staking contract, the undelegation rights are available to be claimed from the staking contract by a delegation protocol (if agreed-upon by the user). The private staking pool does not have un-delegation rights. 
+
+
+
+\subsection{What happens when Pool is Over-Delegated}
+The pool cannot be over-delegated. If you send a transaction that delegates more to a pool than allowed, it will fail. This way we don't have to 
+
+\subsection{What To Do About Buy-in Cost}
+We can: 
+\begin{itemize}
+    \item burn it
+    \item use it for slashing later
+    \item give back (minus some fees) to the operator when they unregister the pool
+\end{itemize}
+
+\subsection{Key Management}
+Delegators have a hot key, a cold key and a rewards. The cold key is required for all management functions. The rewards key is where the pool operator's rewards go (can be the cold key). Hot key: used to sign blocks. Can be kept in-memory. If compromized, can be replaced by a smart contract function. 
+
+\subsection{Fee-Change Protocol}
+\begin{itemize}
+    \item no max fee 
+    \item holding period for any fee change (~ undelegation time). The Wallet must communicate this to the user. 
+\end{itemize}
+
+\subsection{Management}
+\begin{itemize}
+    \item change fee
+    \item change metadata
+\end{itemize}
+
+\subsection{Unregister Pool}
+
+
+\subsection{Responsibilities of the Wallet}
+The wallet (interface) is responsible for the following actions with respect to the pool operator:
+\begin{itemize}
+    \item when the pool shuts down and a user is staked with that pool, the wallet must notify the user to de-stake. 
+\end{itemize}
+
+\subsection{Rewards Splitting}
+Rewards will be split evenly between all participants in the pool, after fees are subtracted. The rewards will be automatically deposited in the rewards variable in the delegation contract, at every block won by the pool. This makes sense, since when a pool wins a block, all the stake contributed to it winning that block. Some might argue that age of the delegated stake should factor in, but it does, since the longer you participate in this pool, the more you're gonna win. There are many different rewards splitting schemes in PoW like PPS and PPLNS \cite{Coi18}. We are going to be opinionated and say that you start making rewards after no lag. But in the future we might add the option for the pools to pick a rewards sharing scheme. There needs to be some probabilistic analysis to be done on the fairness of this rewards splitting scheme. The simple scheme of distributing the rewards based on the latest block snapshot seems the most fair, since in the short term, you might get diluted as a long term holder, but in the long term you stand to gain more. The block rewards allocated to a particular participant depends on the amount of stake that the participant delegated in a particular block. The staking rewards are available to the user in the following block (rewards work at the resolution of a block)
+
+Requirements on the staking pools with respect to rewards:
+\begin{itemize}
+    \item sharing rewards should be an automatic process that does not require an action. That way, the user does not have to trust the pool operator to distribute rewards to them. 
+    \item reward sharing policy should be transparent to all stake pool participants
+\end{itemize}
+
+\subsection{Inactive Stake Pools}
+When the wallet is running and the user has delegated to a stake pool, the wallet should monitor the activity score of the pools and notify the user if the pool looses it's attractiveness score: 
+\begin{itemize}
+    \item Large amounts of stake leaves the pool
+    \item The pool's up-time goes down
+    \item The fee changes
+\end{itemize}
+This way, if the pool ceases to operate without being properly retired, it's members will be incentivized to re-delegate; their rewards will start to diminish and their wallet will notify them that the block producer is not producing blocks anymore. 
+
+\subsubsection{Display of Staking pools in the Wallet}
+The wallet software will maintain a set of all active staking pools. For each it will perform a lookup for the contained identifier to display the meta-data to the user. 
+In order for users to make a rational choice, we sort the pools based on some weighted function of: 
+\begin{itemize}
+    \item rewards expected for delegating to pool
+    \item performance of the pool (uptime, measured as an exponential moving average over the last 10k blocks or keeping a moving window). Different wallets can use different methods to report averages. 
+    \item amount of stake already accumulated (we don't want the pools to get too big. Also, pools have some maximum caps
+\end{itemize}
+\todo[inline]{Further research is required to specify this function precisely}
+
+In summary, we want to promote pools that are reliable, have not yet reached saturation, and have a low cost. User's selfish interest to pick staking pools promising large rewards with the goal of placing the systems in the hands of a large number of reliable stake pool operators, avoiding centralization. 
+
+\subsubsection{Calculating apparent performance of old pools}
+If a pool has been around for at-least 10k blocks, we can effectively measure it's performance. The stake amount can fluctuate over time and the rewards are unpredictable (distributed stochastically) at every block. But we can take some moving average of the stake the pool has accumulated over a moving window, and compare that to the expected number of blocks the pool was expected to have won. This would become the proxy for \textit{up-time} and reliability. This could be a number between 0 - 100. 
+\todo[inline]{Further research is required to specify this function precisely}
+
+\subsubsection{Apparent performance of new pools} 
+When a new pool is created, there is no data to determine it's apparent performance (required to compute desirability). New pools should show up in a separate tab so as to not influence people's decision. Here the pools are sorted based on returns and amount of stake already accumulated. Only mature pools show up in the main \textit{delegation center}.
+
+\subsubsection{How to deal with dead pools}
+Pools that have been officially retired by the operator live here. 
+
+\subsection{Sybil Resistance for Staking Pools}
+Designing incentive mechanisms that promote decentralization in PoS is an open problem. PoW has a tendency to centralize via the creation of mining pools, which have been observed to exceed over 50\% on occasion, casting doubt on the resiliency and security.
+With PoS protocols, with their ability to record how the stake is held offers an opportunity to design incentive mechanism to incentivize decentralized behaviour. 
+If rewards are awarded proportionally to effort (after removing operations costs of maintianing the pool), the rational behavior is to all agregate into one pool tominimize costs and maximize profits. 
+Thre is a tradefoof between efficiency and trust. 
+Efficinecy is optimized if you have one pool operator that all stokeholders delegate to
+Trust is maximized if every single stakeholder runs their own pool. 
+In order to find a balanced solution, if we can find some large number ($k$) of pools, with an incentive-based mechanism to provide rewards to either propose a new pool or support one of the already proposed ones. 
+
+This mechanism allows stakers to delegate to any pool they prefer. 
+
+Brunjes et al. propose a rewards function for both the pool owners and the stakers such that some target number of stake pools is a Nash equilibrium (arising from rational play). Although promising, further analysis is required to adapt this rewards mecahnism to the Unity consensus, and will be considered in an upcoming update. 
+
+The goal is pro minimize pool costs while providing protection against a single stakeholder creating a large number of pools in the hopes of dominating a colaboarative project. 
+
+Instead, the scheme used is a very simple one, inspired by the scheme employed by Tezos \cite{Goo14}. It involves imposing a self-bond requirement, to limit the maximum amount of stake a validator (a.k.a. block producer, staking pool, delegate) can receive from third parties. It's typically defined in percentage; for example, if the self-bound requirement is 10\% and a validator self-bonded 100 AION, then the maximum stake it can receive from other coin holders will be 900 AION.
+
+There are mainly three reasons behind this idea:To prevent a pool from abusing the staking power it gathered from other coin holders, to limit the size of a pool and to facilitate slashing for misbehaviour.
+
+It should reject a third-party stake operation if the self-bond requirement is violated.
+
+Although this scheme does not provably deter centralization, it produces some barriers to pools becoming too large (since pool operators would require large amount of stake to become large pools). 
+
+\tikzset{elliptic state/.style={draw,ellipse}}
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',auto,node distance=5cm,transform shape]
+  \node[initial,elliptic state] (A)                    {$liquid$};
+  \node[elliptic state, align=center]         (B) [right of=A] {$delegated$\\$staked$};
+  \node[elliptic state,node distance=4cm,align=center]         (C) [above right of=A] {$naked$\\$staked$};
+  \node[elliptic state]         (D) [right of=B] {$thawing$};
+  \path (A) edge [align=center,below]              node {delegate\\stake} (B)
+        (A) edge [align=left]                node {naked\\stake} (C)
+        (B) edge [below]            node {unstake} (D)
+        (C) edge              node {undelegate} (D)
+        (D) edge [loop right,align=left,right] node {$<$3 days\\elapsed} (D)
+        (D) edge [align=right,bend left=50]  node {$>$3 days\\elapsed} (A);
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',auto,node distance=5cm,transform shape,initial text={initialize}]
+  \node[initial,elliptic state] (A) {$active$};
+  \node[elliptic state,] (B) [right of=A] {$dead$};
+  \path (A) edge [align=center,loop below] node {change\\fee} (A)
+        (A) edge [align=center,loop above] node {update\\meta-data} (A)
+        (A) edge [] node {tear-down} (B);
+\end{tikzpicture}
+\end{center}
+
+\tikzset{elliptic state/.style={draw,ellipse}}
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',auto,node distance=5cm,transform shape]
+  \node[initial,elliptic state] (A)                    {$liquid$};
+  \node[elliptic state, align=center]         (B) [right of=A] {$delegated$\\$staked$};
+  \node[elliptic state,node distance=4cm,align=center]         (C) [above right of=A] {$naked$\\$staked$};
+  \node[elliptic state]         (D) [right of=B] {$thawing$};
+  \path (A) edge [align=center,below]              node {delegate\\stake} (B)
+        (A) edge [align=left]                node {naked\\stake} (C)
+        (B) edge [below]            node {unstake} (D)
+        (C) edge              node {undelegate} (D)
+        (D) edge [loop right,align=left,right] node {$<$3 days\\elapsed} (D)
+        (D) edge [align=right,bend left=50]  node {$>$3 days\\elapsed} (A);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Penalty-free Redelegation}
+
+Users should be able to re-delegate from one pool to another without having hit with the unbonding period. They should be able to do so using the wallet. 
+
+\subsection{UI Warning for Large Pools}
+
+If a pool becomes too big >20\% of the total stake, the UI must show a warning to discourage stakers from bonding to that pool. 
+
+
+
+
+\subsection{What the Pool Can't Control}
+The following things are fixed in the delegation protocol:
+\begin{itemize}
+    \item The payout mechanics (which are
+\end{itemize}
+
+This pooling service is generally provided by centralized service provides, who are responsible for directing the \textit{shares} of work between all participants pooling the resourcees, and ultimately producing the block. Historical reports of a single mining pool exceeding 50\% mining power, and the findings of Romiti et al. \cite{RJZ+19}, that a small number of actors (≤ 20) receive over 50\% of all BTC payouts \textit{within} three of the four largest Bitcoin mining pools demonstrate the tendency for PoW networks to centralize through mining pools. 
+This highlights a key trade-off between \textit{\textbf{efficiency}} and \textit{\textbf{decentralization}} in the design of rewards sharing schemes in PoW and PoS networks: 
+\begin{itemize}
+    \item Efficiency is optimized if one pool operator, exists that all miners (or stakeholders) delegate to; this minimizes the costs and maximizes profits for everyone. 
+    \item Decentralization is maximized if every individual miner (or stakeholder) runs their own blockchain node. 
+\end{itemize}
+
+
+
+
+
+The PoS subsystem inside Unity, designed to emulate PoW 
+With mining pools in popular PoW networks such as Bitcoin have been observed 
+
+
+has a tendency to centralize via the creation of mining pools, which have been observed to exceed over 50\% on occasion, casting doubt on the resiliency and security
+
+
+Designing incentive mechanisms that promote decentralization in PoS is an open problem. PoW has a tendency to centralize via the creation of mining pools, which have been observed to exceed over 50\% on occasion, casting doubt on the resiliency and security. With PoS protocols, with their ability to record how the stake is held offers an opportunity to design incentive mechanism to incentivize decentralized behaviour. If rewards are awarded proportionally to effort (after removing operations costs of maintianing the pool), the rational behavior is to all aggregate into one pool to minimize costs and maximize profits. There is a trade-off between efficiency and trust. 
+\begin{itemize}
+    \item Efficiency is optimized if you have one pool operator that all stakeholders delegate to
+    \item Trust is maximized if every single stakeholder runs their own pool. 
+\end{itemize}
+
+In order to find a balanced solution, if we can find some large number ($k$) of pools, with an incentive-based mechanism to provide rewards to either propose a new pool or support one of the already proposed ones. 

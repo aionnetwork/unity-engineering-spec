@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{dirtytalk}
+\usepackage{amssymb}
+\usepackage{todonotes}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{glossaries}
+
+% tikz settings
+\usetikzlibrary{shapes,arrows,positioning,calc,automata}
+
+% basic information about paper, etc.
+\title{Engineering Design and Incentive\\Specification for Aion-Unity}
+\author{
+    Ali Sharif\\
+    \texttt{ali@aion.network}
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{flushright}
+\rightskip=1.8cm\textit{``Most magic numbers in blockchain protocols are determined through careful analysis.''} \\
+\vspace{.2em}
+\rightskip=.8cm--- @VitalikButerin, \textit{Twitter}
+\end{flushright}
+\vspace{1em}
+
+\begin{abstract}
+This document is a complete specification for the Aion-Unity upgrade, documenting the design of the staking, delegation and incentive schemes introduced in the release. 
+\end{abstract}
+
+\section*{Acknowledgements}
+This specification was produced in collaboration with the entire R\&D staff at the Aion Foundation, with major contributions from Yulong Wu, Yao Sun, Dipesh Pradhan, Jeff Disher, Aayush Rajasekaran, Yunfei Zha and Ge Zhong. 
+
+\section{Introduction}
+This document aims to specify all subsystems required for the implementation of the Unity consensus algorithm \cite{WZS19} as an upgrade to the Aion blockchain.
+
+The key words \textit{MUST}, \textit{MUST NOT}, \textit{REQUIRED}, \textit{SHALL}, \textit{SHALL NOT}, \textit{SHOULD}, \textit{SHOULD NOT}, \textit{RECOMMENDED}, \textit{MAY}, and \textit{OPTIONAL} in this document are to be interpreted as described in RFC 2119 \cite{RFC2119}.
+
+% paper body
+\input{staking-protocol.tex}
+
+% bibliography
+\bibliographystyle{alpha}
+\bibliography{main}
+
+\end{document}

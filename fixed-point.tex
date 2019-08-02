@@ -1,0 +1,53 @@
+\section{Non-Integer Calculations}
+In the current implementation of the Aion blockchain, all calculations are performed in some exact way using rational numbers and arbitrary precision integers.
+
+The implementation of the Unity consensus algorithm requires the use of non-integer calculations and the computation of elementary functions that cannot be represented as rational numbers, namely the natural logarithm ($\ln(x)$). These non-integer calculations are required on critical-path components of Unity, name in the PoS block forging and validation algorithms (\cite{WZS19} \S4.1.1) and the difficulty adjustment algorithm (\cite{WZS19} \S4.2).
+
+Integral calculations can be unambiguously implemented across hardware architectures and programming languages, but no widely used solution exists to perform precise non-integer computations cross-platform \cite{Izm19}. Precise and replicable (cross-platform) computations are critical to the correct functioning of the consensus algorithm, since slight drifts in these calculations could cause the network to fork. Since the Aion blockchain has multiple implementations  across platforms, we provide an exact specification of how to compute the aforementioned elementary functions, to allow for independent implementations of the consensus, with identical behavior.
+
+Much of the proceeding analysis and recommendations are inspired by the work by Gudemann \cite{Gud19} for the Cadano-Shelley protocol; the reader is encouraged to read the Gudemann paper for an in-depth exposition of approximation algorithms considered here.
+
+\subsection{Solution Survey}
+Several strategies for the implementation of non-integer calculations was considered in the work of Gudemann \cite{Gud19}. 
+
+The IEEE754 floating point specification was designed to solve the problem of non-integer calculations cross-platform, but the implementation of the elementary functions required are not specified by the standard and differences are known to exist in implementation, primarily due to mismatch in floating-point precision and rounding modes across platforms \cite{Obi06}. 
+
+Using techniques in Diophantine approximation \cite{Sch96, Cur19}, precise approximation of all real numbers can be achieved using rational numbers. All known techniques to obtain such approximations incur arbitrary long numerators or denominators, and therefore a non-predictable run-time (i.e. this problem is known to be NP complete) \cite{ER09}.
+
+Due to the deficiencies observed in the aforementioned approaches, the use of \textbf{\textit{fixed point arithmetic is recommended}}. Although less efficient than the hardware accelerated implementation for IEEE-754, desired decimal precision can be implemented in software using exact integer arithmetic. In order to approximate solutions to $\ln(x)$, we can use the Talor series or continued fractions; both techniques work by iteratively constructing a series $x_0$, $x_1$,..., $x_n$ where each successive $x_i$ improves on the approximation. 
+
+\subsection{Computation Cases in Unity}
+For completeness, we outline the three computations in the Aion-Unity system that require fixed-point arithmetic: 
+
+\begin{itemize}
+
+\item \textbf{Time to Next PoS Block}: For PoS block forging, the $n^{\text{th}}$ staker must compute the time-to-next-PoS-block ($\Delta_n$) by using the following equation:
+\begin{equation} \label{ttnsb}
+\Delta_n = \frac{d_s \cdot \ln(hash(seed_n)/2^{256})}{V_n}.
+\end{equation}
+In equation \ref{ttnsb}, the $V_n$ is the total amount of coins staked by the $n^{\text{th}}$ user and the $seed_n$ is calculated by retrieving the last PoS block's seed, and then signing it using the $n^{\text{th}}$ user's public key. $d_s$ is the current staking difficulty. The computation of this equation requires a natural log approximation and fixed point division. 
+
+\item \textbf{Validate Proposed Block}: When a staking block is proposed on the (p2p) network by the $n^{\text{th}}$ user, the receiving node needs to compute the $\Delta_n$ (as defined in equation \ref{ttnsb}) and ensure that at-least $\Delta_n$ seconds have elapsed since the last PoS block (according to their local clock), before accepting this block. Let $t_elapsed$ be the time elapsed since the last PoS block. Then the receiving node must compute the following inequality: 
+\begin{equation}
+  t_{elapsed} \geq \Delta_n
+\end{equation}
+\begin{equation} \label{vpb}
+  \Rightarrow \frac{V_n \cdot t_{elapsed}}{d_s} \geq \ln(hash(seed_n)/2^{256})
+\end{equation}
+The computation of this equation requires a natural log approximation and fixed point division.
+\item \textbf{Difficulty Adjustment Algorithm}: Let $X_T$ be the average block time over the last two blocks of the same type (e.g. $X_{PoW}$ is the arithmetic mean of the last two PoW blocks). Note that two difficulty numbers (one for PoW and one for PoS) are maintained. At the arrival of every block, based on the block type, the respective difficulty number ($d$) is adjusted, based on $X_T$ using the following algorithm: 
+\begin{itemize}
+    \item if $X_T > -\frac{\ln (0.5)}{\lambda}$, then $d_{t+1} = \frac{d_t}{1 + \alpha}$;
+    \item if $X_T = -\frac{\ln (0.5)}{\lambda}$, then $d_{t+1} = d_t$;
+    \item if $X_T < -\frac{\ln (0.5)}{\lambda}$, then $d_{t+1} = d_t \cdot (1 + \alpha)$.
+\end{itemize}
+The $\alpha$ controls the learning rate, which determines the responsiveness of the algorithm. The $-\frac{\ln (0.5)}{\lambda}$ is a system constant that can be determined as prescribed in \cite{WZS19} \S4.2. The computation of this equation requires a natural log approximation and fixed point division.  
+\end{itemize}
+
+\subsection{Implementation Specification}
+
+\subsubsection{Natural Log Approximation}
+We recommend leveraging the C library provided by Gudemann et al. \cite{GC19} for the approximation for the natural logarithm. Gudemann et al. use the continued fractions approach to approximate $\ln(x)$, citing a faster convergence speed when compared to a Taylor series expansion \cite{Gud19}. 
+
+\subsubsection{Fixed Point Arithmetic}
+\todo[inline]{Need to define appropriate fixed-point arithmetic parameters like precision, accuracy and rounding mode, based on performance and other implementation-level details. To be decided on by the Kernel team? We recommend selecting precision, accuracy and rounding to retain compatibility with the library provided by Gudemann et al. \cite{GC19}.}
