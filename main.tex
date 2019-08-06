@@ -12,10 +12,18 @@
 \usepackage{amssymb}
 \usepackage{todonotes}
 \usepackage{amsmath}
-\usepackage{listings}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{glossaries}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{pgf-umlsd}
+\usepackage[toc,page]{appendix}
+\usepackage[T1]{fontenc}
+\usepackage{inconsolata}
+\usepackage{color}
+
+\setcounter{secnumdepth}{6}
 
 % tikz settings
 \usetikzlibrary{shapes,arrows,positioning,calc,automata}
@@ -43,7 +51,11 @@ This document is a complete specification for the Aion-Unity upgrade, documentin
 \end{abstract}
 
 \section*{Acknowledgements}
-This specification was produced in collaboration with the entire R\&D staff at the Aion Foundation, with major contributions from Yulong Wu, Yao Sun, Dipesh Pradhan, Jeff Disher, Aayush Rajasekaran, Yunfei Zha and Ge Zhong. 
+This specification was produced in collaboration with the entire R\&D staff at the Aion Foundation, with major contributions from Yulong Wu, Yao Sun, Dipesh Pradhan, Jeff Disher, Aayush Rajasekaran, Sam Pajot-Phipps, Yunfei Zha and Ge Zhong. 
+
+\newpage
+\tableofcontents
+\newpage
 
 \section{Introduction}
 This document aims to specify all subsystems required for the implementation of the Unity consensus algorithm \cite{WZS19} as an upgrade to the Aion blockchain.
@@ -52,9 +64,18 @@ The key words \textit{MUST}, \textit{MUST NOT}, \textit{REQUIRED}, \textit{SHALL
 
 % paper body
 \input{staking-protocol.tex}
+%\input{fixed-point.tex}
 
 % bibliography
+\pagebreak
 \bibliographystyle{alpha}
 \bibliography{main}
 
+\clearpage
+\begin{appendices}
+\input{appendix-a.tex}
+\end{appendices}
+
+
 \end{document}
+

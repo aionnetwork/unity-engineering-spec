@@ -5,7 +5,7 @@ The implementation of the Unity consensus algorithm requires the use of non-inte
 
 Integral calculations can be unambiguously implemented across hardware architectures and programming languages, but no widely used solution exists to perform precise non-integer computations cross-platform \cite{Izm19}. Precise and replicable (cross-platform) computations are critical to the correct functioning of the consensus algorithm, since slight drifts in these calculations could cause the network to fork. Since the Aion blockchain has multiple implementations  across platforms, we provide an exact specification of how to compute the aforementioned elementary functions, to allow for independent implementations of the consensus, with identical behavior.
 
-Much of the proceeding analysis and recommendations are inspired by the work by Gudemann \cite{Gud19} for the Cadano-Shelley protocol; the reader is encouraged to read the Gudemann paper for an in-depth exposition of approximation algorithms considered here.
+Much of the proceeding analysis and recommendations are inspired by the work by Gudemann \cite{Gud19} for the Cardano-Shelley protocol; the reader is encouraged to read the Gudemann paper for an in-depth exposition of approximation algorithms considered here.
 
 \subsection{Solution Survey}
 Several strategies for the implementation of non-integer calculations was considered in the work of Gudemann \cite{Gud19}. 
