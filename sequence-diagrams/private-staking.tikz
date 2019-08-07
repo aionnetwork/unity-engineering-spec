@@ -8,7 +8,7 @@
     \end{umlcall}
   \end{umlfragment}
   
-  \begin{umlfragment} [type=Stake\ Coins]
+  \begin{umlfragment} [type=Stake]
     \begin{umlcall}[op={vote(staker) \{amount\}}, type=synchron, dt=8.5, return={\ }]{Staker}{StakerRegistry}
     \end{umlcall}
   \end{umlfragment}
@@ -16,7 +16,7 @@
   \begin{umlcallself} [op={coins staked}, type=asynchron, dt=5]{StakerRegistry}
   \end{umlcallself}
     
-  \begin{umlfragment} [type=Unstake\ Coins]
+  \begin{umlfragment} [type=Unstake]
     \begin{umlcall}[op={unvote(staker, amount)}, type=synchron, dt=17.5, return={\ }]{Staker}{StakerRegistry}
     \end{umlcall}
     \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}

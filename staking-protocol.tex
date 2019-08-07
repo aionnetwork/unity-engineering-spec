@@ -30,14 +30,16 @@ We take an approach that lies in-between the two extremes. In our approach, the 
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[auto,>=latex']
-    \node [block, name=sc, align=center, minimum width=3cm] (sc) {Staker Registry\\Contract};
+    \node [block, name=sc, align=center, minimum width=3.4cm] (sc) {Staker Registry\\Contract};
     \node [block, right of=sc, node distance=6.5cm, align=center, minimum width=3.6cm] (dc0) {Public\\Delegation Contract};
     \node [block, below of=dc0,node distance=2cm, align=center, dashed, minimum width=3.6cm] (dc1){Custom\\Delegtion Contract};
     \node [block, above of=dc0,node distance=2cm, align=center, minimum width=3.6cm] (dc2){Private\\Staking};
+    \node [block, below of=sc,node distance=1.95cm, align=center, minimum width=3.4cm, dashed] (dc3){Off-Chain\\Stake Pooling};
     
     \draw [<-] (sc) -- node{$calls$} (dc0);
     \draw [<-, dashed] (sc) -- node{} (dc1);
     \draw [<-] (sc) -- node{} (dc2);
+    \draw [<-, dashed] (sc) -- node{} (dc3);
 \end{tikzpicture}
 \caption{Implementation of the stake delegation protocol in the Aion-Unity upgrade}
 \label{fig:delegation_scheme}
@@ -462,6 +464,10 @@ We use stake as a noun, as opposed to a verb (ie. to stake). In order to imply t
     \item \textit{transferToStaker}: transfer stake to another staker
 \end{itemize}
 
+The rationale for fixing this terminology was the following: we were using the word stake as both a noun and a verb. In order to reduce ambiguity, we fixed the term stake to refer to bonded coins; the act of staking (through the StakerRegistry is then called \say{voting}. For all stakers registered (entities who want to run full PoS nodes and participate in network security), they should be \say{voting} their coins to themselves. Unless some out-of-band arrangement has been made to be compensated, coin holders should not \say{vote} for other stakers in the StakingRegistry (other than themselves), since there is no build in mechanism for rewards splitting in such scenarios. 
+
+This is a deliberate design decision to keep voting and unvoting for stake open to anyone, since it enables the development of off-chain stake pooling protocols. 
+
 \paragraph{Private staking and unstaking}
 Figure \ref{fig:priv_staking} describes a very simple scenario, where a Staker chooses to privatly stake their coins 
 
@@ -504,7 +510,7 @@ For the undelegation, it is a two-step process. The user calls undelegate on the
 
 \paragraph{Withdrawal}
 
-Figure \ref{fig:withdrawal} demonstrates a withdrawal. See section \ref{f1-rewards} for details on the function of the coinbase contract; it get's emptied out every time any action is called that changes the stake distribution in the pool (delegate, undelegate, withdraw or transfer delegation actions).  
+Figure \ref{fig:withdrawal} demonstrates a withdrawal. See section \ref{f1-rewards} for details on the function of the coinbase contract; it get's emptied out every time any action is called that changes the stake distribution in the pool (delegate, undelegate, withdraw or transfer delegation actions). In the withdrawal scenario, the pool registry has kept track of how much coins it's already withdrawn from the PoolCoinbase based on delegators' previous actions; it further empties out the pool coinbase contract account by calling the transfer function. It then uses the F1 algorithm (\S\ref{fig:delegation_scheme}) to compute rewards owed to the delegator, and sends it to the delegator.  
 
 \begin{figure}[ht]
 \centering
@@ -516,12 +522,23 @@ Figure \ref{fig:withdrawal} demonstrates a withdrawal. See section \ref{f1-rewar
 
 \paragraph{Auto-Redelegation}
 
-Figure \ref{fig:redelegation} demonstrates a auto-redelegation feature. There are two paths into Auto-redelegation. One while delegation, and one to enable after a delegation.  
+Figure \ref{fig:redelegation} demonstrates a auto-redelegation feature. There are two paths into Auto-redelegation. One while delegation, and one to enable after a delegation. If you did not call the function to enable auto redeleagtion upon delegation, you can call an additional function called enable auto redelegation. Either way you enable, you need to provide a fee. This fee gets provided to any user who calls autoRedelegate on your belhaf. Basically, the idea is that due to async nature of the F1 rewards scheme and lack of an onBlock event, autoRedelegation becomes a feature that people might want as they might want to \say{set it and forget it} (i.e. they want their stake to compound automatically. In this design, people are incentivized to send transactions to autoRedlegate rewards for users based on the fee. So for example, if the fee is 2\% for a particular user, people would wait until enough rewards have been accumulated for an account such that 2\% of that value is an appropriate reward for me to send this transaction. Batching service should be provided, to make these transactions even more economical. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/autoredelegate.tikz}
 \caption{Auto-redelegation feature}
 \label{fig:redelegation}
+\end{figure}
+
+\paragraph{Delegation Transfer}
+
+Figure \ref{fig:delegation_transfer} demonstrates a delegation transfer feature. This is the idea that if I delegated to a pool, I should be able to transfer my delegation to another pool, with minimal overhead. We can't make the transfers instantaneous, as that creates an attack vector in unity (if you can instantaneously transfer, then you can compute the next delta parameter by changing the amount of stake, to preferentially win blocks!). Therefore we need to impose some delay between when you send a transfer delegation request, and when it takes effect. This delay is smaller than the undelegation delay. This transfer is a two step process (just like auto-delegation and private unstake, and undelegation. Unlike auto redelegation, there is no fee for people to finalize transfers since the pools have an incentive to finalize transfers. We recommend the implementation of a batch protocol to make it even more efficient to finalize a whole bunch of transfer in one shot. Furthermore, the user can wait the transfer lockout period and send the finalize transfer transaction themselves. 
+
+\begin{figure}[ht]
+\centering
+\includegraphics{sequence-diagrams/delegation-transfer.tikz}
+\caption{Delegation transfer feature}
+\label{fig:delegation_transfer}
 \end{figure}
 
