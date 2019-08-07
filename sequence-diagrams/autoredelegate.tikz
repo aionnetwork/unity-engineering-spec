@@ -1,0 +1,17 @@
+\begin{tikzpicture}
+\begin{umlseqdiag}
+  \umlactor[no ddots, x=2]{Delegator}
+  \umlactor[no ddots]{Any User}
+  \umlobject[no ddots, fill=blue!20, x=12]{PoolRegistry}
+  
+  \begin{umlfragment} [type=Setup]
+    \begin{umlcall}[op={delegateAndEnableAutoRedelegation(pool, fee) \{amount\}}, type=synchron, dt=12, return={\ }]{Delegator}{PoolRegistry}
+    \end{umlcall}
+    \umlfpart[after delegation]
+      \begin{umlcall}[op={delegate(pool) \{amount\}}, type=synchron, dt=8, return={\ }]{Delegator}{PoolRegistry}
+      \end{umlcall}
+      \begin{umlcall}[op={enableAutoRedelegation(pool, fee)}, type=synchron, dt=4, return={\ }]{Delegator}{PoolRegistry}
+      \end{umlcall}
+  \end{umlfragment}
+\end{umlseqdiag}
+\end{tikzpicture}

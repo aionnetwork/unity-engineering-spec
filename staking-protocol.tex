@@ -212,7 +212,7 @@ The user stake is protected by a \say{layer of indirection} designed into the AD
 \begin{itemize}
     \item \textit{Rewards key}: This key entitles it's holder the rights to any pool operator rewards (i.e. pool rewards get paid out to this key). If this key is compromised, the attacker can steal the pool operator rewards, but that's it, since this key has no other responsibilities. Security recommendations (cold / hot storage, etc.) are deferred to the judgment of the pool operator (depending how they choose to manage their rewards). 
     \item \textit{Block-signing key (hot key)}: This key entitles it's holder the rights to produce blocks on behalf of all the stake delegated to the staking pool. This key needs to be kept online while connected to the Aion-Unity network, since this key is required to sign any blocks won by the pool in the course of the PoS \say{lottery}. At the moment, the guidance is to load this private key in the memory of an appropriately permissioned process, or in a commercial (e.g. YubikeyHSM 2) or industrial HSM that supports EdDSA (ED25519) signatures. If this key is compromised, the attacker can censor (deny inclusion of) transactions within the blocks supported by the delegated stake. 
-    \item \textit{Management key (hot key)} This key entitles it's holder the rights to all pool management, registration and shut-down tasks \S\ref{pool_actions}. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. There is no mechanism to replace this key with another one, since this (public) key is the identity of this pool; this public key is used by any entities addressing this pool for any on chain interactions with this pool (e.g. delegators use this public key to identify the pool they would wish to delegate their staking rights to). This is the key used by the operator to register the pool. If this key is compromised, the pool is compromised and must be shut down. If this key is compromised, the attacker can take over pool operations (e.g. shut-down the pool, etc.). It is important to note that even if this \say{master pool key} is compromised, the delegated stake is in no risk; to reiterate, no key, except for the user's very own, has rights to alter any delegations or withdraw any delegated or liquid coins belonging to the user. In the event of a management key compromise, the user must simply transfer delegation rights to another pool with sufficient delegation capacity to resume any interruptions in rewards outlays. 
+    \item \textit{Management key (cold key)} This key entitles it's holder the rights to all pool management, registration and shut-down tasks \S\ref{pool_actions}. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. There is no mechanism to replace this key with another one, since this (public) key is the identity of this pool; this public key is used by any entities addressing this pool for any on chain interactions with this pool (e.g. delegators use this public key to identify the pool they would wish to delegate their staking rights to). This is the key used by the operator to register the pool. If this key is compromised, the pool is compromised and must be shut down. If this key is compromised, the attacker can take over pool operations (e.g. shut-down the pool, etc.). It is important to note that even if this \say{master pool key} is compromised, the delegated stake is in no risk; to reiterate, no key, except for the user's very own, has rights to alter any delegations or withdraw any delegated or liquid coins belonging to the user. In the event of a management key compromise, the user must simply transfer delegation rights to another pool with sufficient delegation capacity to resume any interruptions in rewards outlays. 
 \end{itemize}
 
 Note that when registering for a pool (\S\ref{pool_actions}), do not use exchange addresses for the rewards key or the block-signing keys. The operator needs to control the private key for the rewards account in order to (send a transaction and) retrieve the rewarded coins, which accumulate in the delegation contract. Needless to say, the operator need to control the private key for the block-signing account in order to sign the blocks on their full node.   
@@ -403,7 +403,16 @@ Since the ADS is a non-previledged contract, all computations that need to be do
     \item Rewards distribution scheme design
 \end{itemize}
 
-\subsubsection{Rewards Distribution Scheme}
+\subsubsection{Asuncronous Events}
+There are three asynchronous events that exist in this system: 
+\begin{itemize}
+    \item Unstake coins
+    \item Auto Re-delegation of Rewards
+    \item Transfer of delegtion
+\end{itemize}
+Since we don't have t
+
+\subsubsection{Rewards Distribution Scheme} \label{f1-rewards}
 The problem of rewards distribution is an interesting one in this context and worth a significant discussion, since much of the novelty in this contracts and the ways it's internal state is structured depends on this idea. Consider the following problem. Every block, a staking pool receives rewards if they successfully mine that block. All the while, delegators can join, leave or change their delegations. 
 
 Now consider a naive solution to this problem: assume you have some function that gets called when you produce a block. So in this function, you would settle the rewards for every delegator in this function. The runtime of this program is linear in the number of delegators you have. Furthermore, each "settlement" is 1 write (it is probably more writes than that). Assume a 20M gas limit per block and a cost of 5K gas per storage write. Then you can only have ~4K members in your pool, and the block will be full (so no other transactions go in). It will effectively clog up the blockchain! 
@@ -424,7 +433,7 @@ There are several cases to consider when figuring out the decimal precision we n
     \item To store the accumulated values (since the range of this can be larger, but is the precision of this value always the same?) 
 \end{itemize}
 
-\subsubsection{Auto-redelegation of Rewards}
+\subsubsection{Auto-redelegation of Rewards} 
 Auto-redelegation of rewards (as introduced in \S\ref{stake_concerns}), is the idea that users can set a variable in the contract that will automatically delegate any rewards the user has accumulated as stake, so the user does not have to constantly redelegate. Since this is not a privileged contract, no hooks exist in the AVM paradigm to automatically trigger logic, therefore, we have to construct a "protocol-within-a-protocol". Effectively, the way this works is the following: when the user opts in to auto-relegation, they are opting into the fact that any user of the system can send a transaction to re-delegate my rewards on my behalf. This means, they could run a script to redelegate their rewards, or sign up on some kind of service that does this for them. Why would anyone run this service? We built in this mechanism of \textbf{\textit{auto-redelegation fee}}, which is a nominal fee that anyone calling this function on your behalf can charge per function call. To not over-complicate the system, this fee will be fixed. The idea is that web-services can be written which scrape which accounts have registered for auto-redelegation and then they wait for enough rewards to accumulate for that account. One the rewards are large enough such that the fee $*$ rewards is greater than the transaction cost by some profit threshold, they will send a transaction on your behalf to redelegate your stake.  
 
 \subsubsection{Staking Registry Implementation Details}
@@ -432,7 +441,7 @@ unvote requires two treansactions: one to undelegate, and a second to unVote whe
 
 \subsubsection{Illustrative Interactions}
 
-Here, for didactic purposes, we illustrate some user and cross-contract interactions to give a better picture of how this system works.
+Here, for didactic purposes, we illustrate some user and cross-contract interactions to give a better picture of how this system works. Note that the interactions between uml actors (user, either stakers, pool operators or delegators) are modelled as synchronous events, with a return of 1 indicating a successful transaction. Anything in curly brackets (\{\}) after function calls is the coin amount sent as part of the transaction (function call).
 
 \begin{itemize}
     \item Private staking
@@ -454,79 +463,65 @@ We use stake as a noun, as opposed to a verb (ie. to stake). In order to imply t
 \end{itemize}
 
 \paragraph{Private staking and unstaking}
+Figure \ref{fig:priv_staking} describes a very simple scenario, where a Staker chooses to privatly stake their coins 
 
-Figure \ref{fig:sequence1} outlines the sequence diagram for a staker to privately stake their coins (i.e. without going through the ADS or any other delegation mechanism. 
-
-\begin{figure}[ht]
-\centering
-\begin {sequencediagram}
-  \newthread {ss}{Staker}
-  \newinst {ctr}{StakerRegisry}
-  \newinst {ps}{PhysicsServer}
-  \newinst [1]{sense}{SenseServer}
-  \begin {call}{ss}{Initialize()}{sense}{}
-  \end {call}
-  \begin {sdblock}{Run Loop}{The main loop}
-    \begin {call}{ss}{StartCycle()}{ctr}{}
-      \begin {call}{ctr}{ActAgent()}{sense}{}
-      \end {call}
-    \end {call}
-    \begin {call}{ss}{Update()}{ps}{}
-      \begin {messcall}{ps}{PrePhysicsUpdate()}{sense}{state}
-      \end {messcall}
-      \begin {sdblock}{Physics Loop}{}
-        \begin {call}{ps}{PhysicsUpdate()}{ps}{}
-        \end {call}
-      \end {sdblock}
-      \begin {call}{ps}{PostPhysicsUpdate()}{sense}{}
-      \end {call}
-    \end {call}
-    \begin {call}{ss}{EndCycle()}{ctr}{}
-      \begin {call}{ctr}{SenseAgent()}{sense}{}
-      \end {call}
-    \end {call}
-  \end {sdblock}
-\end {sequencediagram}
-\caption{Smart contract architecture for stake delegation system in Aion-Unity}
-\label{fig:sequence1}
-\end{figure}
-
-
-
+the sequence diagram for a staker to privately stake their coins (i.e. without going through the ADS or any other delegation mechanism).  The staker has to first register themselves with the StakingRegisry contract; then they could send vote, messages, voting for themselves, sending over amount to stake. When they're ready to unstake their coins, they have to send two transactions: one to perform the unvote (with the amount to unvote), and one to release the stake, after the lockout period is over. This design is due to the fact that we don't have onBlockProduced events to trigger release of coins after the 
 
 \begin{figure}[ht]
 \centering
-\begin {sequencediagram}
-  \newthread {ss}{SimulationServer}
-  \newinst {ctr}{SimControlNode}
-  \newinst {ps}{PhysicsServer}
-  \newinst [1]{sense}{SenseServer}
-  \begin {call}{ss}{Initialize()}{sense}{}
-  \end {call}
-  \begin {sdblock}{Run Loop}{The main loop}
-    \begin {call}{ss}{StartCycle()}{ctr}{}
-      \begin {call}{ctr}{ActAgent()}{sense}{}
-      \end {call}
-    \end {call}
-    \begin {call}{ss}{Update()}{ps}{}
-      \begin {messcall}{ps}{PrePhysicsUpdate()}{sense}{state}
-      \end {messcall}
-      \begin {sdblock}{Physics Loop}{}
-        \begin {call}{ps}{PhysicsUpdate()}{ps}{}
-        \end {call}
-      \end {sdblock}
-      \begin {call}{ps}{PostPhysicsUpdate()}{sense}{}
-      \end {call}
-    \end {call}
-    \begin {call}{ss}{EndCycle()}{ctr}{}
-      \begin {call}{ctr}{SenseAgent()}{sense}{}
-      \end {call}
-    \end {call}
-  \end {sdblock}
-\end {sequencediagram}
-\caption{Smart contract architecture for stake delegation system in Aion-Unity}
+%\resizebox{\linewidth}{!}{\includegraphics{private-staking.tikz}}
+\includegraphics{sequence-diagrams/private-staking.tikz}
+\caption{Private staking interactions}
+%\vspace{-0.2cm}
 \label{fig:priv_staking}
 \end{figure}
 
+\paragraph{Pool setup}
+Figure \ref{fig:pool_setup} describes the setup of a pool by a pool operator. The function arguments are omitted for brevity. Please refer to Appendix \ref{appendix:contract} for full contract and detailed function arguments. 
 
+First, the operator must sign up with the StakerRegistry as a staker (using a dummy coinbase address, which we will change later). Then he must sign up in the Pool registry with  the appropriate setup parameters. The setup call will deplay the coinbase contract and return it's address. The operator must now make one final calle to the staking registry to update the  
+the sequence diagram for a staker to privately stake their coins (i.e. without going through the ADS or any other delegation mechanism).  The staker has to first register themselves with the StakingRegisry contract; then they could send vote, messages, voting for themselves, sending over amount to stake. When they're ready to unstake their coins, they have to send two transactions: one to perform the unvote (with the amount to unvote), and one to release the stake, after the lockout period is over. This design is due to the fact that we don't have onBlockProduced events to trigger release of coins after the 
+
+\begin{figure}[ht]
+\centering
+\includegraphics{sequence-diagrams/pool-setup.tikz}
+\caption{Pool setup}
+\label{fig:pool_setup}
+\end{figure}
+
+\paragraph{Delegate and undelegate coins}
+
+Figure \ref{fig:delegation} shows the lifecycle events of delegation and undelegation. All interactions that the delegator does are with the PoolRegistry. For delegation, the user must send the coins to the PoolRegistry as part of the delegate(..) transaction. When delegate(..) gets called, it in-turn records the delegation and adds the stake to himself in the StakerRegistry; to the staking registry, the pool looks like one big staker, constantly adding more and more stake. 
+
+For the undelegation, it is a two-step process. The user calls undelegate on the PoolRegistry with the address of the pool they want to undelegate from. As part of this transaction, the PoolRegistry contract turns around and calls unvoteTo(..) to remove the stake from the active stake, and have the stake be eligible to be withdrawn from the StakerRegistry by it's original owner. After the lockout period has elapsed, the user can call releaseStake on the PoolRegistry contract, which is just a wrapper around the releaseStake(..) functionality in the StakerRegistry contract. 
+
+\begin{figure}[ht]
+\centering
+\includegraphics{sequence-diagrams/delegation.tikz}
+\caption{Coin delegation and undelegation}
+\label{fig:delegation}
+\end{figure}
+
+\paragraph{Withdrawal}
+
+Figure \ref{fig:withdrawal} demonstrates a withdrawal. See section \ref{f1-rewards} for details on the function of the coinbase contract; it get's emptied out every time any action is called that changes the stake distribution in the pool (delegate, undelegate, withdraw or transfer delegation actions).  
+
+\begin{figure}[ht]
+\centering
+\includegraphics{sequence-diagrams/withdrawal.tikz}
+\caption{Delegation rewards withdrawal}
+\label{fig:withdrawal}
+\end{figure}
+
+
+\paragraph{Auto-Redelegation}
+
+Figure \ref{fig:redelegation} demonstrates a auto-redelegation feature. There are two paths into Auto-redelegation. One while delegation, and one to enable after a delegation.  
+
+\begin{figure}[ht]
+\centering
+\includegraphics{sequence-diagrams/autoredelegate.tikz}
+\caption{Auto-redelegation feature}
+\label{fig:redelegation}
+\end{figure}
 
