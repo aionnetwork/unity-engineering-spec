@@ -1,0 +1,64 @@
+% java code formatting 
+\definecolor{pblue}{rgb}{0.13,0.13,1}
+\definecolor{pgreen}{rgb}{0,0.5,0}
+\definecolor{pred}{rgb}{0.9,0,0}
+\definecolor{pgrey}{rgb}{0.46,0.45,0.48}
+
+\lstset{
+tabsize = 4, %% set tab space width
+showstringspaces = false, %% prevent space marking in strings, string is defined as the text that is generally printed directly to the console
+commentstyle = \color{pgreen}, %% set comment color
+keywordstyle = \color{pblue}, %% set keyword color
+stringstyle = \color{pred}, %% set string color
+rulecolor = \color{pgrey}, %% set frame color to avoid being affected by text color
+basicstyle = \small \ttfamily , %% set listing font and size
+breaklines = true, %% enable line breaking
+numberstyle = \tiny,
+}
+
+\section{System Smart Contracts}
+\label{appendix:contract}
+
+Here, we've pulled out the AVM contracts as Java interfaces. The uml diagram was presented in the body. Most of the getters are ommitted for brevity. Only the functions used in the major control flows described in the next appendix and in the spec body are mentioned here. Please see the contract reference implementation for details. Also, access modifiers (e.g. public, private, etc.) at the class and method level have also been stripped for brevity.
+
+\begin{lstlisting}[language = Java , escapeinside={(*@}{@*)}]
+interface StakerRegistry {
+    void registerStaker(Address signingAddress, Address coinbaseAddress);
+    void vote(Address staker);
+    void unvote(Address staker, long amount);
+    void unvoteTo(Address staker, long amount, Address receiver);
+    int finalizeUnvote(Address owner, int limit);
+    void transferStake(Address fromStaker, Address toStaker, long amount);
+    int finalizeTransfer(Address staker, int limit);
+    void setSigningAddress(Address newSigningAddress);
+    void setCoinbaseAddress(Address newCoinbaseAddress);
+    void addListener(Address listener);
+    void removeListener(Address listener);
+}
+
+interface PoolRegistry extends StakerRegistryListener {
+    Address registerPool(byte[] metaData, int commissionRate);
+    void delegate(Address pool);
+    void undelegate(Address pool, long amount);
+    void redelegateRewards(Address pool);
+    void transferStake(Address fromPool, Address toPool, long amount);
+    long withdraw(Address pool);
+    int finalizeUnvote(Address owner, int limit);
+    void finalizeTransfer(long transferId);
+    void enableAutoRedelegation(Address pool, int feePercentage);
+    void disableAutoRedelegation(Address pool);
+    void autoRedelegate(Address pool, Address delegator);
+}
+
+interface StakerRegistryListener {
+    void onSigningAddressChange(Address staker, Address newSigningAddress);
+    void onCoinbaseAddressChange(Address staker, Address newCoinbaseAddress);
+    void onListenerAdded(Address staker);
+    void onListenerRemoved(Address staker);
+}
+
+interface PoolCoinbase {
+    void transfer(Address recipient, long amount);
+}
+
+\end{lstlisting}
