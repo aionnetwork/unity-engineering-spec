@@ -5,17 +5,17 @@ The Unity consensus algorithm combines both proof of work (PoW) and proof of sta
 \subsection{Fixing Terminology}
 In the PoS subsystem of Unity \cite{WZS19}, any coin holder of a system can run a full node in the blockchain network in order to produce PoS blocks; we refer to these coin holders as \textit{stakers}.
 
-In order to support a staker's participation in PoS consensus, coins must be rendered immobile (i.e. they cannot be freely transferred to other users) via their submission into the staking system; these coins are referred to as \textit{stake}. As long as these coins are held (on behalf of the owner) in the staking system, they contribute to the total influence of the staker in the PoS consensus (as discussed in the Unity paper \cite{WZS19}). 
+In order to support a staker's participation in PoS consensus, coins must be rendered immobile (i.e. they cannot be freely transferred to other users) via their submission into the staking system; these coins are referred to as \textbf{\textit{stake}}. As long as these coins are held (on behalf of the owner) in the staking system, they contribute to the total influence of the staker in the PoS consensus (as discussed in the Unity paper \cite{WZS19}). 
 
-When a coin holder casts their coin as stake to a staker, we call this action a \textit{vote} or \textit{bond}. Notice that we  to use the word \say{stake} strictly as a noun throughout this document and the implementation; this is done to avoid confusion with the action of casting coins to a staker, for which we use the verbs \textit{to bond} and \textit{to vote} interchangeably. 
+When a coin holder casts their coin as stake to a staker, we call this action a \textbf{\textit{vote}} or \textbf{\textit{bond}}. Notice that we  to use the word \say{stake} strictly as a noun throughout this document and the implementation; this is done to avoid confusion with the action of casting coins to a staker, for which we use the verbs \textit{to bond} and \textit{to vote} interchangeably. 
 
-The coin holder can either vote for themselves (increasing their power as a staker in PoS) or they can vote for another staker. The action of voting for another staker is referred to as \textit{delegation}. We further discuss the motivation for delegation in \S\ref{delegation_overview}.
+The coin holder can either vote for themselves (increasing their power as a staker in PoS) or they can vote for another staker. The action of voting for another staker is referred to as \textbf{\textit{delegation}}. We further discuss the motivation for delegation in \S\ref{delegation_overview}.
 
 Any coin holder that votes for another staker (in order to earn a share of PoS block rewards in exchange for increasing the power of said staker in PoS) is referred to as a \textit{delegator}. Note that a delegator is not a staker, since they don't operate a node and contribute to PoS security.
 
-At any point, a delegator or a voter can choose to withdraw their bonded coins (reducing the PoS power of the staker delegated or voted to). When a delegator withdraws their delegated coins, they are said to \textit{undelegate}. When a voter withdraw their voted coins, they are said to \textit{unvote}. In either scenario, when the coins in question get unbonded in the staking system, they are subject to a post-lock period (\cite{WZS19} \S4.1.1). After the post-lock period has elapsed, their coins exit the staking system and become \textit{liquid} (free to transfer to other users). 
+At any point, a delegator or a voter can choose to withdraw their bonded coins (reducing the PoS power of the staker delegated or voted to). When a delegator withdraws their delegated coins, they are said to \textbf{\textit{undelegate}}. When a voter withdraw their voted coins, they are said to \textbf{\textit{unvote}} or \textbf{\textit{unbond}}. In either scenario, when the coins in question get unbonded in the staking system, they are subject to a post-lock period (\cite{WZS19} \S4.1.1). After the post-lock period has elapsed, their coins exit the staking system and become \textbf{\textit{liquid}} (free to transfer to other users). 
 
-A delegator is allowed to \textit{transfer} their delegation between stakers (subject to stipulations discussed in a subsequent section). 
+A delegator is allowed to \textbf{\textit{transfer}} their delegation between stakers (subject to stipulations discussed in a subsequent section). 
 
 \subsubsection{The Need for Delegation} \label{delegation_overview}
 In the PoW paradigm, mining pools allow participants with modest hash power to \textit{pool} their resources with strangers to achieve a more reliable outlay of rewards. Similarly, in PoS networks, \textit{delegation} allows users to transfer their rights to participate in the proof of stake (PoS) protocol to \textit{stake pools}. 
@@ -115,9 +115,9 @@ Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in,
 \begin{itemize}
     \item \textbf{\textit{Liquid}}: A coin is liquid when it is owned by the user's account. In this state, the user is free to transact in the system (e.g. transfer to another user, stake, pay transaction fee for smart contract interactions, etc.).
     \item \textbf{\textit{Staked}}: A coin is staked if is has been cast as a \say{vote} (\S\ref{sc_design} to a staker in the Staker Registry. 
-    \item \textbf{\textit{Transfer Pending}}: Stake can be transferred from one staker to another in the staker registry. When this action occurs, the coin must be locked for some short period (transfer-pending period) in order to not violate security invariants of the Unity consensus. The transfer lockout period is required to defend against the following attack vector. Consider a staker who has registered $N$ stake pool. If the transfer of stake was instantaneous, then for all $N$ pools, the staker could compute various PoS \say{time-to-next-block} deltas with different stake distributions, and select the distribution that maximizes their probability of winning the next block (assuming they win the current block).  
+    \item \textbf{\textit{Transfer-pending}}: Stake can be transferred from one staker to another in the staker registry. When this action occurs, the coin must be locked for some short period (transfer-pending period) in order to not violate security invariants of the Unity consensus. The transfer lockout period is required to defend against the following attack vector. Consider a staker who has registered $N$ stake pool. If the transfer of stake was instantaneous, then for all $N$ pools, the staker could compute various PoS \say{time-to-next-block} deltas with different stake distributions, and select the distribution that maximizes their probability of winning the next block (assuming they win the current block).  
     \item \textbf{\textit{Thawing}}: Any time a coin has been staked (either through the staking contract or the delegation interface), a thawing period must be applied to preserve Unity consensus security invariants \cite{WZS19}. After the thawing period (defined in some number of blocks elapsed since the unstaking action) has elapsed, the coins go into the liquid state (i.e. get returned to the user's account). 
-    \item \textbf{\textit{Rewards-pending}}: When block rewards are distributed by the coin minting function in the protocol, the rewards get paid out to the pool-operator ADS contract. The ADS contract contains logic, upon receipt of rewards, to extract the operator fee from the block rewards and distribute it among the stakers, proportional to their delegated stake. The total reward sum is computed by the contract, with the contract tracking the fraction of the reward each of the parties (delegators, operators) are owed. There are several claims mechanisms available to all parties. After some amount of rewards have accumulated, one can send a transaction to withdraw the coins to their account (liquid). One can also send a transaction to manually re-delegate the rewards-pending coins to increase the total stake delegated. Lastly, one can enable the auto-re-delegation feature, which allows the rewards to be automatically re-delegated upon payout. 
+    \item \textbf{\textit{Rewards-outstanding}}: When block rewards are distributed by the coin minting function in the protocol, the rewards get paid out to the pool-operator ADS contract. The ADS contract contains logic, upon receipt of rewards, to extract the operator fee from the block rewards and distribute it among the stakers, proportional to their delegated stake. The total reward sum is computed by the contract, with the contract tracking the fraction of the reward each of the parties (delegators, operators) are owed. There are several claims mechanisms available to all parties. After some amount of rewards have accumulated, one can send a transaction to withdraw the coins to their account (liquid). One can also send a transaction to manually re-delegate the rewards-outstanding coins to increase the total stake delegated. Lastly, one can enable the auto-re-delegation feature, which allows the rewards to be automatically re-delegated upon payout. 
 \end{itemize}
 
 \begin{figure}[h]
@@ -128,7 +128,7 @@ Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in,
   \node[initial,elliptic state] (A) {$liquid$};
   \node[elliptic state, align=center] (B) [right of=A] {$staked$};
   \node[elliptic state] (D) [right of=B] {$thawing$};
-  \node[elliptic state, align=center, node distance=5cm] (E) [below of=A] {$rewards$\\$pending$};
+  \node[elliptic state, align=center, node distance=5cm] (E) [below of=A] {$rewards$\\$outstanding$};
   \node[elliptic state, align=center, node distance=3.5cm] (F) [above of=B] {$transfer$\\$pending$};
   \path (A) edge [align=center,above] node {vote} (B)
         (B) edge [above] node {unvote} (D)
@@ -387,19 +387,6 @@ This way, if the pool ceases to operate without being properly retired, it's del
 
 \subsection{Smart Contract Design} \label{sc_design}
 Here, we outline the design of the smart contract implementation of the staking and delegation system in Aion-Unity. The system consists of three distinct contracts (with their relationship depicted in Figure \ref{fig:contract_arch}):
-\begin{itemize}
-    \item \textbf{\textit{Staker Registry Contract}}: This contract tracks all stake and stakers in the system and is core to the Aion-Unity protocol. This contract is described as a staker registry, since anyone wishing to stake their coins (including other contracts), can register here. The key indirection is built-in here; when you sign up to be a staker, you need to provide your coinbase key and your block-signing key as described in \S\ref{key_management}. 
-    \item \textbf{\textit{Pool Registry Contract}}: This contract is non-core to the system and is privileged as any other contract in the system (i.e. has no special privileges and isn't core to the protocol). This is the implementation of the Aion Delegation standard (ADS) and is responsible for: 
-    \begin{itemize}[label=--,nosep]
-        \item Keeping a registry of all pools, and their associated meta-data
-        \item For each pool, this contract stores all state (including all delegations and rewards).
-        \item It owns the rewards accumulated for all the pools.
-        \item This contract receives the stake from the user, which it turns around and delegates to the staker registry.
-    \end{itemize}
-    This contract implements the Staker Registry Listener, which is important for the StakerRegistry contract to notify the PoolRegistry of changes about changes to the signing address and coinbase address. 
-    \item \textbf{\textit{Pool Coinbase Contract}}: This contract is spawned by the pool registry contract. This is the contract that receives the pool rewards. This is an implementation artefact and the end user should never need to understand the function of this contract. It is here to collect rewards. Since the ADS is not a special contract, we need some way to collect rewards for each staker in a different account, which are then collected such that they are owned by the Pool Registry, with a record of who owns how much of the rewards recorded in the Pool Registry. Every time a pool gets registered, the pool registry get's deployed to track all rewards. 
-    \item \textbf{\textit{Staker Registry Listener}}: This interface is implements two basic listeners (on
-\end{itemize}
 
 \begin{figure}[ht]
 \centering
@@ -415,106 +402,91 @@ Here, we outline the design of the smart contract implementation of the staking 
     \draw [->, dashed] (pr) -- node{} (pc2);
     \path (pc1) -- node[auto=false, font=\large, midway, sloped]{\ldots} (pc2);
 \end{tikzpicture}
-\caption{Smart contract architecture for stake delegation system in Aion-Unity}
+\caption{Smart contract architecture for stake delegation in Aion-Unity}
 \label{fig:contract_arch}
 \end{figure}
 
-Since the ADS is a non-previledged contract, all computations that need to be done, have to occur inside the "trasaction boundaries" i.e. someone has to provide gas to execute all the logic. Certain decisions were made in service of this goal. Two major ones were: 
-\begin{itemize}[label=--,nosep]
-    \item Auto-redelegation of rewards implementation, and 
-    \item Rewards distribution scheme design
-\end{itemize}
-
-\subsubsection{Asuncronous Events}
-There are three asynchronous events that exist in this system: 
 \begin{itemize}
-    \item Unstake coins
-    \item Auto Re-delegation of Rewards
-    \item Transfer of delegtion
+    \item \textbf{\textit{Staker Registry Contract}}: This contract tracks all stake and stakers in the system and is core to the Aion-Unity protocol (i.e. this is a privileged contract, whose state is required by the protocol to resolve PoS consensus). Anyone wishing to cast their coins to stake (including other contracts, e.g. delegation contracts), need to register here. Key indirection (as described in \S\ref{key_management}) is built-in here; when one signs up to be a staker, one needs to provide their coinbase and signing addresses. 
+    \item \textbf{\textit{Pool Registry Contract}}: This contract is non-core to the system (i.e. has no special privileges in the system). This is the implementation of the Aion Delegation standard (ADS) and is responsible for: 
+    \begin{itemize}[label=--,nosep]
+        \item keeping a registry of all staking pools and associated meta-data,
+        \item receiving coins (as delegation to a pool) and casting them to stake, 
+        \item managing internal state of each pool (including delegation and rewards),
+        \item and splitting the rewards among the pool operator and delegators. 
+    \end{itemize}
+    This contract implements the StakerRegistryListener interface, which enables this contract to be notified about changes made by a pool operator in the StakerRegistry to its signing and coinbase addresses (see \S\ref{pool_states} for details). 
+    \item \textbf{\textit{Pool Coinbase Contract}}: This contract is spawned by the pool registry contract for each pool it instantiates. The pool's coinbase contract receives block rewards on behalf of the pool. For a particular pool, when the operator or any of the delegators request a withdrawal (in the PoolRegistry), the coins are withdrawn from this contract by the PoolRegistry. This is an implementation artifact and the end user should never need to understand the function of this contract. It is here to collect rewards. 
+    
+    We now outline the rationale for this design. Recall that the PoolRegistry has no special privileges. The standard way block rewards are disbursed is by crediting the coinbase account cited in the block header. Since all pools and their states are managed in the PoolRegistry contract, if the block rewards for all pools were paid to the PoolRegistry contract, the contract could not figure out which pool the disbursement was intended for (since no contract code gets executed by the protocol upon block reward outlay). Therefore, the PoolRegistry must spawn and manage a unique contract (per pool) to receive block rewards in the standard way, and then retrieve these rewards from this contract when withdrawals are requested by any delegator or operator.  
 \end{itemize}
-Since we don't have an onBlockProduced function, some of these actions have to get separated across transactions. (ie. all these things require timeouts) .
 
-\subsubsection{Pool States: Broken and Active}
+\subsubsection{Rewards Distribution Algorithm} \label{f1-rewards}
+
+One critical requirement regarding rewards sharing is that \say{rewards sharing must be an on-chain, automatic process that does not require any action on part of the stake pools}. The problem of on-chain rewards distribution appears trivial at first glance, but deserves significant attention care in its design.  
+
+First, lets consider the naive solution to the problem of block rewards distribution. Assume some hypothetical \say{onBlockProduced} function that executes as the last transaction in a PoS block produced by a staking pool. In this function, the block rewards are be disbursed to the pool's operator and delegators. The time-complexity of this function is linear in the number of delegators in the pool. Since the disbursement to each delegator requires at-least one state update (database write), state updates linear in the number of delegators in the pool would need to be performed. Furthermore, since state updates are a fairly costly operation in the Aion-AVM regime, especially for large pools, updating the state for every delegator in a pool alone, could easily surpass the total gas limit of a block (which represents the maximum amount of computation that network participants can perform in the validation of blocks, while keeping the block-time stable). Since the combined gas cost for disbursements and the included transactions in a block cannot exceed the total block gas limit, this naive solution is clearly impractical: consider a \say{full} PoS block; there is no gas budget left (in the block) for rewards disbursement!  
+
+\paragraph{F1 Rewards Distribution} A more clever solution this problem was proposed by Ojha \cite{Ojh19}. A detailed description of the rewards distribution mechanism is out of the scope of this report (please refer to \cite{Ojh19} or a toy-implementation by the author \cite{Sha19}). 
+
+This algorithm moves all rewards distribution computation from some hypothetical \say{onBlockProduced} function (which is not available in the Aion protocol to begin with), to any events where the rewards-per-unit-stake changes (e.g. delegate, undelegate, withdraw, etc.). The rewards distribution is still linear in the number of delegators, but the computation is amortized over the interactions users have with the system (i.e. all fee distribution computations are \say{fuelled by} user-provided gas).   
+
+Furthermore, this algorithm is approximation-free; in the rewards distribution calculations, the only source of approximation is finite decimal precision, which cannot be avoided (confirmed using simulation in \cite{Sha19}).  
+
+\subsubsection{Asynchronous Tasks}
+There are several instances of \say{asynchronous} tasks in the Aion-Unity staking and stake delegation systems: 
+\begin{itemize}
+    \item \textit{\textbf{Unbonding Stake}}: Upon unbonding or undelegating of stake, the coins must be ineffective in PoS and immobile (not liquid) for at-least the thawing period \S\ref{stake_concerns}.  
+    \item \textit{\textbf{Transfer Stake}}: Upon transfer of stake from one staker to another in the Staker Registry contract, the coins must be ineffective in PoS and immobile (not liquid) for at-least the transfer-pending period \S\ref{stake_concerns}.  
+    \item \textit{\textbf{Auto Redelegation}}: Rewards earned by delegators in the system can be \say{auto-delegated}; i.e. coins earned as part of block rewards can be automatically cast to stake on behalf of the delegator.  
+\end{itemize}
+
+These features are asynchronous in the sense that these features cannot be implemented within one transaction initiated by the user; they require some action by the protocol itself (not initiated by a user), after some condition on contract or chain state has been met.   
+
+In the case of unbonding and transfer stake, they are examples of time-locks, which require an action from the system, delayed into the future from some trigger-action. 
+
+On the other hand, auto redelegation (in it's most trivial incarnation) is a case of the protocol taking an action on behalf of the user upon an event (disbursement of rewards). 
+No mechanism exists in the protocol for transactions to be scheduled in the future or be automatically triggered if a (chain or contract) state change occurs, since it violates security constraints of the AVM computation metering system. 
+
+Therefore, we had to flatten the aforementioned features into two disparate transactions (an initiating transaction and a finalizing transaction). The initiating transaction is sent by a user looking to affect their state (unbond, transfer or enable auto-redelegation). The finalizing transaction can be performed by anyone in the system (including the user himself) in order to unwind the initiated action.
+
+We considered incentives that people would have to make function calls on other users' behalf. In the case of auto redelegation, we attached a fee that the callers could collect for calling auto redelegation. In the case of the time-lock interactions, we figured the user could call it themselves, or expect their staking pool to perform it (could be included in the fee charged by the pool). 
+
+\paragraph{Unbonding Stake}
+Ubonding requires two treansactions: one to undelegate, and a second to unVote when the period has elapsed. Technically at that point, the coins are liquid, so with one transaction, they are immediately available. Alternatively, we could have a public goods system like the redelegateRewards scheme, although, that seems like overkill, since within one transaction, that money comes back to you anyway. This is done so that we don't have add in the onBlockProduced hook. 
+
+\paragraph{Transfer Stake} demonstrates a delegation transfer feature. This is the idea that if I delegated to a pool, I should be able to transfer my delegation to another pool, with minimal overhead. We can't make the transfers instantaneous, as that creates an attack vector in unity (if you can instantaneously transfer, then you can compute the next delta parameter by changing the amount of stake, to preferentially win blocks!). Therefore we need to impose some delay between when you send a transfer delegation request, and when it takes effect. This delay is smaller than the undelegation delay. This transfer is a two step process (just like auto-delegation and private unstake, and undelegation. Unlike auto redelegation, there is no fee for people to finalize transfers since the pools have an incentive to finalize transfers. We recommend the implementation of a batch protocol to make it even more efficient to finalize a whole bunch of transfer in one shot. Furthermore, the user can wait the transfer lockout period and send the finalize transfer transaction themselves. 
+
+\paragraph{Auto Redelegation of Rewards} 
+Auto-redelegation of rewards (as introduced in \S\ref{stake_concerns}), is the idea that users can set a variable in the contract that will automatically delegate any rewards the user has accumulated as stake, so the user does not have to constantly redelegate. Since this is not a privileged contract, no hooks exist in the AVM paradigm to automatically trigger logic, therefore, we have to construct a "protocol-within-a-protocol". Effectively, the way this works is the following: when the user opts in to auto-relegation, they are opting into the fact that any user of the system can send a transaction to re-delegate my rewards on my behalf. This means, they could run a script to redelegate their rewards, or sign up on some kind of service that does this for them. Why would anyone run this service? We built in this mechanism of \textbf{\textit{auto-redelegation fee}}, which is a nominal fee that anyone calling this function on your behalf can charge per function call. To not over-complicate the system, this fee will be fixed. The idea is that web-services can be written which scrape which accounts have registered for auto-redelegation and then they wait for enough rewards to accumulate for that account. One the rewards are large enough such that the fee $*$ rewards is greater than the transaction cost by some profit threshold, they will send a transaction on your behalf to redelegate your stake.  
+
+There are two paths into Auto-redelegation. One while delegation, and one to enable after a delegation. If you did not call the function to enable auto redeleagtion upon delegation, you can call an additional function called enable auto redelegation. Either way you enable, you need to provide a fee. This fee gets provided to any user who calls autoRedelegate on your belhaf. Basically, the idea is that due to async nature of the F1 rewards scheme and lack of an onBlock event, autoRedelegation becomes a feature that people might want as they might want to \say{set it and forget it} (i.e. they want their stake to compound automatically. In this design, people are incentivized to send transactions to autoRedlegate rewards for users based on the fee. So for example, if the fee is 2\% for a particular user, people would wait until enough rewards have been accumulated for an account such that 2\% of that value is an appropriate reward for me to send this transaction. Batching service should be provided, to make these transactions even more economical. 
+
+
+
+
+
+
+
+
+\subsubsection{Pool States: Broken and Active} \label{pool_states}
 
 There are two states in the pool life-cycle (Figure \ref{fig:pool_lifecycle}): \textit{broken} and \textit{active}. If the pool isn't broken, it's active. When is a pool in the \textit{broken} state?
 \begin{itemize}
     \item When a pool is registered, a new PoolCoinbase contract is deployed to track block rewards paid out to the pool. The pool starts out in the broken state, and remains so until both of the following conditions are met: the pool registry contract is set as the StakerRegistryListener for this particular pool and the coinbase is set correctly in the StakerRegistry contract. 
     \item If the coinbase address is changed in the staker registry to anything other than the pool coinbase deployed by the PoolRegistry contract on pool initialization, the pool get's broken.There should be no way in the implementation to violate this invariant. 
-    \item If the PoolRegistry contract is removed as a listener for this pool, the pool gets broken. There should be no way in the implementation to violate this invariant. 
+    \item If the PoolRegistry contract is removed as a listener for this pool, the pool gets broken. There should be no way in the implementation to violate this invariant.
     \item If the pool's self-bond requirement is violated (see \S\ref{self_bond}), the pool gets broken.
 \end{itemize}
 
-\begin{figure}[ht]
-\centering
-\tikzset{elliptic state/.style={draw,ellipse}}
-\begin{center}
-\begin{tikzpicture}[->,>=stealth',auto,transform shape,initial text={register pool}]
-  \node[initial,elliptic state] (A) {$broken$};
-  \node[elliptic state,node distance=6cm] (B) [right of=A] {$active$};
-  
-  \path (B) edge [align=center,loop above] node {management\\functions} (A)
-        
-        (A) edge [align=center, bend left=30] node {satisfy pool\\invariants} (B)
-        (B) edge [align=center, bend left=30] node {violate pool\\invariants} (A);
-\end{tikzpicture}
-\end{center}
-\caption{Staking pool life-cycle}
-\label{fig:pool_lifecycle}
-\end{figure}
+Currently, there is no implication for a pool to be in a dead state, but in a future release, we can make the pool unable to generate blocks if the pool is in the broken state (pending).
 
-\subsubsection{Rewards Distribution Scheme} \label{f1-rewards}
+\subsection{Protocol (Kernel) Responsibilities}
+Since the function of the protocol depends on the StakerRegistry contract's state, there must be some special interactions that must to coded into protocol implementation (i.e. \say{the kernel}). 
 
-The major requirements around rewards sharing was that \say{rewards sharing must be an on-chain, automatic process that does not require any action on part of the stake pools}. 
-
-The problem of rewards distribution is an interesting one in this context and worth a significant discussion, since much of the novelty in this contracts and the ways it's internal state is structured depends on this idea. Consider the following problem. Every block, a staking pool receives rewards if they successfully mine that block. All the while, delegators can join, leave or change their delegations. 
-
-Now consider a naive solution to this problem: assume you have some function that gets called when you produce a block. So in this function, you would settle the rewards for every delegator in this function. The runtime of this program is linear in the number of delegators you have. Furthermore, each "settlement" is 1 write (it is probably more writes than that). Assume a 20M gas limit per block and a cost of 5K gas per storage write. Then you can only have ~4K members in your pool, and the block will be full (so no other transactions go in). It will effectively clog up the blockchain! 
-
-So we can't do this trivial approach for two reasons: first, obviously efficiency, second, we have no such onBlockProduced function! 
-
-So we have to be a little more clever. We end up implementing the F1 fee distribution scheme proposed by Ojha \cite{Ojh19}. The implementation of this scheme is the reason why we need the spawned coinbase contracts per pool. The central idea is to track the rewards a delegator with 1 stake for a given validator would be entitled to. By using this concept of "period" to demarcate any events when this rewards-per-unit-stake changes; at each period boundary, we effectively update an accumulated number. 
-
-When a delegator bonds at block b, the amount of rewards a delegator with 1 stake would have if bonded at block 0 until block b is also persisted. When the delegator withdraws, they receive the difference between these two values, multiplied by the amount of stake a delegator had. Refer to the original paper \cite{Ojh19} or a simlation \cite{Sha19} that confirms the arguments of the approximation-free nature, with the only approximation due to finite decimal precision.  
-
-This mechanism allows us to move all the computations for delegator fee distribution (that we would have done in the hypothetical onBlockProduced function) to any events where the rewards-per-unit-stake change (e.g. delegate, undelgate, withdraw, redelegate, delegateRewards, etc.). The rewards distribution is still linear in the number of delegators, but the computation is amortized over the interactions users have with the system. 
-
-\paragraph{Decimal Precision}
-
-There are several cases to consider when figuring out the decimal precision we need:
+Every time a PoS staker (node operator) produces a block, the kernel must look-up the staker by his signing key (\S\ref{sc_design}) in the StakerRegistry to validate the following:
 \begin{itemize}[label=--,nosep]
-    \item To store the fraction of the stake that I can have
-    \item To store the accumulated values (since the range of this can be larger, but is the precision of this value always the same?) 
+    \item the claimed time-to-next-block is valid, based on their committed stake in the StakerRegistry,
+    \item the claimed coinbase (from the block header) is the registered coinbase in the StakerRegistry,
+    \item and the staker is eligible to produce a block at the proposed block height. 
 \end{itemize}
-
-Copy over the explanation from the contract. 
-
-
-\subsubsection{Auto-redelegation of Rewards} 
-Auto-redelegation of rewards (as introduced in \S\ref{stake_concerns}), is the idea that users can set a variable in the contract that will automatically delegate any rewards the user has accumulated as stake, so the user does not have to constantly redelegate. Since this is not a privileged contract, no hooks exist in the AVM paradigm to automatically trigger logic, therefore, we have to construct a "protocol-within-a-protocol". Effectively, the way this works is the following: when the user opts in to auto-relegation, they are opting into the fact that any user of the system can send a transaction to re-delegate my rewards on my behalf. This means, they could run a script to redelegate their rewards, or sign up on some kind of service that does this for them. Why would anyone run this service? We built in this mechanism of \textbf{\textit{auto-redelegation fee}}, which is a nominal fee that anyone calling this function on your behalf can charge per function call. To not over-complicate the system, this fee will be fixed. The idea is that web-services can be written which scrape which accounts have registered for auto-redelegation and then they wait for enough rewards to accumulate for that account. One the rewards are large enough such that the fee $*$ rewards is greater than the transaction cost by some profit threshold, they will send a transaction on your behalf to redelegate your stake.  
-
-\subsubsection{Staking Registry Implementation Details}
-unvote requires two treansactions: one to undelegate, and a second to unVote when the period has elapsed. Technically at that point, the coins are liquid, so with one transaction, they are immediately available. Alternatively, we could have a public goods system like the redelegateRewards scheme, although, that seems like overkill, since within one transaction, that money comes back to you anyway. This is done so that we don't have add in the onBlockProduced hook. 
-
-\subsubsection{Illustrative Interactions}
-
-Here, for didactic purposes, we illustrate some user and cross-contract interactions to give a better picture of how this system works. Note that the interactions between uml actors (user, either stakers, pool operators or delegators) are modelled as synchronous events, with a return of 1 indicating a successful transaction. Anything in curly brackets (\{\}) after function calls is the coin amount sent as part of the transaction (function call).
-
-\begin{itemize}
-    \item Private staking
-    \item Pool operator signs up
-    \item Delegation of stake to the pool
-    \item Withdrawal of rewards
-    \item Undelegation of stake from the pool
-\end{itemize}
-
-
-
-This is a deliberate design decision to keep voting and unvoting for stake open to anyone, since it enables the development of off-chain stake pooling protocols. 
-
-\subsection{Kernel Responsibilities}
-The only special cases in the kernel are for the Staker Registry contract. Every time a block is produced the kernel must: 
-\begin{itemize}
-    \item Look-up the staker by signing key (see key indirection section)
-    \item Make sure the coinbase claimed in the block header is the coinbase that they registered in the Staker registry (see key indirection section) 
-\end{itemize}
-Apart from that, the kernel should fix the address of the Staker Registry so it can make special calls to contract state to figure out the total amount of stake committted and stake committed by a particular staker for block rewards, block forging, etc.

@@ -1,81 +1,83 @@
 \section{System Interactions}
+
+This appendix illustrates major user and cross-contract interactions, for didactic purposes. Note, that anything in curly brackets (\{\}) after function calls indicates the coin amount enclosed in the transaction (function call).
+
 \label{appendix:sequence_diagrams}
 
-\subsection{Private staking and unstaking}
-Figure \ref{fig:priv_staking} describes a very simple scenario, where a Staker chooses to privatly stake their coins 
+\subsection{Private Staking}
+Figure \ref{fig:priv_staking} describes the scenario where a Staker chooses to privately bond their coins as stake (i.e. run their own node), and then after some time, unbond those coins. The staker must first register with the StakerRegistry contract. Then the staker must send a \say{vote} message (to their own address in the StakerRegistry), sending the amount to bond as the transaction amount. 
 
-the sequence diagram for a staker to privately stake their coins (i.e. without going through the ADS or any other delegation mechanism).  The staker has to first register themselves with the StakerRegistry contract; then they could send vote, messages, voting for themselves, sending over amount to stake. When they're ready to unstake their coins, they have to send two transactions: one to perform the unvote (with the amount to unvote), and one to release the stake, after the lockout period is over. This design is due to the fact that we don't have onBlockProduced events to trigger release of coins after the 
+When the staker is ready to unbond the stake, the staker must do so across two transactions. First, the staker must send the unvote (with the amount to unvote) transaction, which commits the stake into a \textit{thawing} state. This function returns an \textit{unvoteId}, which uniquely identifies this unvote operation. After the thawing period has elapsed (\S\ref{stake_concerns}), at any time, any user in the system can call the finalize function, to release the thawed coins back to the staker. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/private-staking.tikz}
-\caption{Private staking interactions}
+\caption{Private staking in Aion-Unity}
 \label{fig:priv_staking}
 \end{figure}
 \clearpage
 
-\subsection{Pool setup}
-Figure \ref{fig:pool_setup} describes the setup of a pool by a pool operator. The function arguments are omitted for brevity. Please refer to Appendix \ref{appendix:contract} for full contract and detailed function arguments. 
-
-First, the operator must sign up with the StakerRegistry as a staker (using a dummy coinbase address, which we will change later). Then he must sign up in the Pool registry with  the appropriate setup parameters. The setup call will deplay the coinbase contract and return it's address. The operator must now make one final calle to the staking registry to update the  
-the sequence diagram for a staker to privately stake their coins (i.e. without going through the ADS or any other delegation mechanism).  The staker has to first register themselves with the StakerRegistry contract; then they could send vote, messages, voting for themselves, sending over amount to stake. When they're ready to unstake their coins, they have to send two transactions: one to perform the unvote (with the amount to unvote), and one to release the stake, after the lockout period is over. This design is due to the fact that we don't have onBlockProduced events to trigger release of coins after the 
-
-Note that you can't addListener before registerPool() ...
+\subsection{ADS Pool Setup}
+Figure \ref{fig:pool_setup} describes the setup of a staking pool. First, the operator must sign up with the StakerRegistry (using a dummy coinbase address). Then he must sign up in the PoolRegistry with the appropriate setup arguments; this call returns the address of the freshly deployed the coinbase contract (\S\ref{sc_design}). The operator must take the return coinbase contract address and set it as his coinbase in the StakerRegistry. The operator must also register the PoolRegistry contract as the StakerRegistryListener in the StakerRegistry, at any point after registering himself as a staker in the StakerRegistry, to complete the setup. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/pool-setup.tikz}
-\caption{Pool setup}
+\caption{ADS pool setup in Aion-Unity}
 \label{fig:pool_setup}
 \end{figure}
 \clearpage
 
-\subsection{Delegate and undelegate coins}
+\subsection{Delegation to an ADS Pool}
 
-Figure \ref{fig:delegation} shows the lifecycle events of delegation and undelegation. All interactions that the delegator does are with the PoolRegistry. For delegation, the user must send the coins to the PoolRegistry as part of the delegate(..) transaction. When delegate(..) gets called, it in-turn records the delegation and adds the stake to himself in the StakerRegistry; to the staking registry, the pool looks like one big staker, constantly adding more and more stake. 
+Figure \ref{fig:delegation} illustrates the mechanism of delegation and undelegation of stake to an ADS pool. Note that the delegator only has to interact with the PoolRegistry contract to complete their delegation workflow. 
 
-For the undelegation, it is a two-step process. The user calls undelegate on the PoolRegistry with the address of the pool they want to undelegate from. As part of this transaction, the PoolRegistry contract turns around and calls unvoteTo(..) to remove the stake from the active stake, and have the stake be eligible to be withdrawn from the StakerRegistry by it's original owner. After the lockout period has elapsed, the user can call releaseStake on the PoolRegistry contract, which is just a wrapper around the releaseStake(..) functionality in the StakerRegistry contract. 
+In order to delegate stake, a user must send their coins to the PoolRegistry in a delegate transaction. When delegate is invoked, the PoolRegistry records the delegation and adds the stake to the pool's balance in the StakerRegistry; to the staking registry, the pool looks like one big staker. 
+
+The undelegation of stake is a two-step process (since unbonding of stake is involved). When a user calls the undelegate function in the PoolRegistry, an unvoteTo is triggered in the StakerRegistry, which returns the corresponding unvoteId, which uniquely identifies the thawing of this parcel of stake. After the thawing period has elapsed, any user can call the finalizeUnvote function, either through the PoolRegistry or directly in the StakerRegistry with the unvoteId of the delegator, to release the liquid coins back to their account. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/delegation.tikz}
-\caption{Coin delegation and undelegation}
+\caption{ADS delegation and undelegation in Aion-Unity}
 \label{fig:delegation}
 \end{figure}
 \clearpage
 
-\subsection{Auto-Redelegation}
+\subsection{Auto-Redelegation of Rewards}
 
-Figure \ref{fig:redelegation} demonstrates a auto-redelegation feature. There are two paths into Auto-redelegation. One while delegation, and one to enable after a delegation. If you did not call the function to enable auto redeleagtion upon delegation, you can call an additional function called enable auto redelegation. Either way you enable, you need to provide a fee. This fee gets provided to any user who calls autoRedelegate on your belhaf. Basically, the idea is that due to async nature of the F1 rewards scheme and lack of an onBlock event, autoRedelegation becomes a feature that people might want as they might want to \say{set it and forget it} (i.e. they want their stake to compound automatically. In this design, people are incentivized to send transactions to autoRedlegate rewards for users based on the fee. So for example, if the fee is 2\% for a particular user, people would wait until enough rewards have been accumulated for an account such that 2\% of that value is an appropriate reward for me to send this transaction. Batching service should be provided, to make these transactions even more economical. 
+Figure \ref{fig:redelegation} demonstrates the  auto redelegation feature in ADS. A user can enable this feature either at the moment of a delegation, or after the fact as a separate transaction. Once enabled, this feature enables any user to call the auto-redelegate function to commit a delegator's earned rewards as stake. At any point, the delegator can disable this feature. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/auto-redelegate.tikz}
-\caption{Auto-redelegation feature}
+\caption{Auto redelegation of rewards in Aion Unity}
 \label{fig:redelegation}
 \end{figure}
 \clearpage
 
-\subsection{Delegation Transfer}
+\subsection{Stake Transfer}
 
-Figure \ref{fig:delegation_transfer} demonstrates a delegation transfer feature. This is the idea that if I delegated to a pool, I should be able to transfer my delegation to another pool, with minimal overhead. We can't make the transfers instantaneous, as that creates an attack vector in unity (if you can instantaneously transfer, then you can compute the next delta parameter by changing the amount of stake, to preferentially win blocks!). Therefore we need to impose some delay between when you send a transfer delegation request, and when it takes effect. This delay is smaller than the undelegation delay. This transfer is a two step process (just like auto-delegation and private unstake, and undelegation. Unlike auto redelegation, there is no fee for people to finalize transfers since the pools have an incentive to finalize transfers. We recommend the implementation of a batch protocol to make it even more efficient to finalize a whole bunch of transfer in one shot. Furthermore, the user can wait the transfer lockout period and send the finalize transfer transaction themselves. 
+Figure \ref{fig:delegation_transfer} demonstrates the stake transfer feature, at the level of the PoolRegistry (although this interaction looks almost identical for a solo-staker interacting directly with the StakerRegistry). 
+
+A delegator must initiate a transfer of stake between stakers (pools) at PoolRegistry, which in-turn reflects the transfer in the StakerRegistry. A transferId is returned, which uniquely identifies this transfer. After the transfer lockout period has elapsed, any user can call finalize to move the stake between the source and destination stakers.
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/delegation-transfer.tikz}
-\caption{Delegation transfer feature}
+\caption{Stake transfer feature in Aion-Unity}
 \label{fig:delegation_transfer}
 \end{figure}
 \clearpage
 
-\subsection{Withdrawal}
+\subsection{Delegator Withdrawal}
 
-Figure \ref{fig:withdrawal} demonstrates a withdrawal. See section \ref{f1-rewards} for details on the function of the coinbase contract; it get's emptied out every time any action is called that changes the stake distribution in the pool (delegate, undelegate, withdraw or transfer delegation actions). In the withdrawal scenario, the pool registry has kept track of how much coins it's already withdrawn from the PoolCoinbase based on delegators' previous actions; it further empties out the pool coinbase contract account by calling the transfer function. It then uses the F1 algorithm (\S\ref{fig:delegation_scheme}) to compute rewards owed to the delegator, and sends it to the delegator.  
+Figure \ref{fig:withdrawal} demonstrates a withdrawal of rewards earned by a delegator. Rewards are continually withdrawn from a pool's coinbase contract any time the stake apportionment in the pool changes (via a delegation, undelegation, etc.) and managed by the PoolRegistry (see \S\ref{f1-rewards} for details). A withdraw is yet another trigger for the pool's coinbase to be emptied of accumulated rewards (if any exist). Then, the F1 rewards sharing algorithm is invoked to compute the rewards owed to the delegator, which are promptly disbursed before winding down the transaction. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/withdrawal.tikz}
-\caption{Delegation rewards withdrawal}
+\caption{Delegation rewards withdrawal in Aion-Unity}
 \label{fig:withdrawal}
 \end{figure}
 \clearpage

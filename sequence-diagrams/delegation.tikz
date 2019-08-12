@@ -1,7 +1,8 @@
 \begin{tikzpicture}
 \begin{umlseqdiag}
   \umlactor[no ddots]{Delegator}
-  \umlobject[no ddots, fill=blue!20, x=5]{PoolRegistry}
+  \umlactor[no ddots, x=2]{Any User}
+  \umlobject[no ddots, fill=blue!20, x=6]{PoolRegistry}
   \umlobject[no ddots, fill=blue!20, x=11]{StakerRegistry}
   
   \begin{umlfragment} [type=Delegate]
@@ -15,14 +16,14 @@
   \end{umlcallself}
   
   \begin{umlfragment} [type=Undelegate]
-    \begin{umlcall}[op={undelegate(..) \{amount\}}, type=synchron, dt=17, return={\ }]{Delegator}{PoolRegistry}
-      \begin{umlcall}[op={unvoteTo(delegator, amount)}, type=synchron, dt=4, return={\ }]{PoolRegistry}{StakerRegistry}
+    \begin{umlcall}[op={undelegate(..) \{amount\}}, type=synchron, dt=17, return={unvoteId}]{Delegator}{PoolRegistry}
+      \begin{umlcall}[op={unvoteTo(delegator, amount)}, type=synchron, dt=4, return={unvoteId}]{PoolRegistry}{StakerRegistry}
       \end{umlcall}
     \end{umlcall}
     \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}
     \end{umlcallself}
-    \begin{umlcall}[op={releaseStake(owner, limit)}, type=synchron, dt=9, return={\ }]{Delegator}{PoolRegistry}
-      \begin{umlcall}[op={releaseStake(owner, limit)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+    \begin{umlcall}[op={finalizeUnvote(..)}, type=synchron, dt=50, return={\ }]{Any User}{PoolRegistry}
+      \begin{umlcall}[op={finalizeUnvote(..)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
       \end{umlcall}
     \end{umlcall}
   \end{umlfragment}

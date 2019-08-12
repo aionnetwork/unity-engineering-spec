@@ -1,7 +1,8 @@
 \begin{tikzpicture}
 \begin{umlseqdiag}
-  \umlactor[no ddots]{Staker}
-  \umlobject[no ddots, fill=blue!20, x=8]{StakerRegistry}
+  \umlactor[no ddots]{Any User}
+  \umlactor[no ddots, x=2]{Staker}
+  \umlobject[no ddots, fill=blue!20, x=10]{StakerRegistry}
   
   \begin{umlfragment} [type=Setup]
     \begin{umlcall}[op={registerStaker(..)}, type=synchron, dt=10, return={\ }]{Staker}{StakerRegistry}
@@ -17,11 +18,11 @@
   \end{umlcallself}
     
   \begin{umlfragment} [type=Unstake]
-    \begin{umlcall}[op={unvote(staker, amount)}, type=synchron, dt=17.5, return={\ }]{Staker}{StakerRegistry}
+    \begin{umlcall}[op={unvote(staker, amount)}, type=synchron, dt=17.5, return={unvoteId}]{Staker}{StakerRegistry}
     \end{umlcall}
     \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}
     \end{umlcallself}
-    \begin{umlcall}[op={releaseStake(owner, limit)}, type=synchron, dt=11, return={\ }]{Staker}{StakerRegistry}
+    \begin{umlcall}[op={finalizeUnvote(unvoteId)}, type=synchron, dt=54.5, return={\ }]{Any User}{StakerRegistry}
     \end{umlcall}
   \end{umlfragment}
   
