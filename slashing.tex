@@ -1,3 +1,38 @@
-\section{Slashing} \label{slashing}
+\section{Slashing}
+\label{slashing}
 
-\subsection{Minimum Stake Size Requirement}
+Slashing refers to the action of penalizing a staker for its attributable behaviour that violates the protocol. It is designed to disincentivize stakers to behave maliciously. The penalties include but not limited to:
+\begin{itemize}
+    \item Burning/deducting some amount of stake of the staker;
+    \item Revoking the block production right.
+\end{itemize}
+
+\subsection{Minimum Self-Bond Stake Requirement}
+
+To facilitate slashing, we impose a minimum self-bonded stake requirement. The staker has to maintain a self-bond stake before it can produce a PoS block. The self-bond stake serves the purpose of security deposit and is subject to slashing.
+
+The enforcement of self-bond stake check is implemented in the staker registry contract, so integrating kernel is not required to take care of it. All it needs to do is to call the following method, $$getEffectiveStake(signingAddress, coinbaseAddress),$$
+Which return the effective stake of a staker after taking staker status, slashing and coins-to-stake conversion into consideration.
+
+The exact number of minimum self-bond stake is not yet decided. The idea is to make it low so that the barrier to participate in Aion Unity consensus is acceptable, but not too low to allow effective slashing and prevent undetectable nothing-at-stake \cite{brown2019formal}.
+
+\subsection{Slashing Workflow}
+
+The slashing mechanism is implemented in the staker registry contract, so that anyone can submit a proof to slash a misbehaving staker. The proof is a list of block headers, of which the number is defined by the slashing conditions. Withing the contract, the proof is validated.
+
+If a valid proof is provided, the corresponding staker will get slashed. Specifically, The stake of the staker will be deducted and the deducted stake will go to the proof submitter. All registered listeners will also be notified by the staker registry. However, any failure on the listener won't revert the slashing.
+
+The exact amount of slashing amount (either percentage-wise or fixed value) is not yet decided, and is subject to economic analysis and slashing condition.
+
+\subsubsection{Pool Registry}
+
+Pool registry is a listener of every active pools. It will settle the block rewards of the pool owner in event of slashing. It will also update its internal state to reflect the stake changes and change the pool status if the self-bond requirement satisfaction changes.
+
+\subsection{Slashing Conditions}
+
+At the time of writing, the slashing conditions haven't been finalized. There are three slashing conditions on the table:
+\begin{itemize}
+    \item For producing multiple PoS blocks for the same height;
+    \item For producing two PoS blocks where block time of block I $t_1$ is larger than that of block II $t_2$ and chain weight of block I $w_1$ is less than that of block II $w_2$;
+    \item For producing any PoS block on a side-chain (Dunkles).
+\end{itemize}
