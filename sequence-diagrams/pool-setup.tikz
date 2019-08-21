@@ -4,23 +4,14 @@
   \umlobject[no ddots, fill=blue!20, x=5]{StakerRegistry}
   \umlobject[no ddots, fill=blue!20, x=11]{PoolRegistry}
   
-  \begin{umlcall}[op={registerStaker(..)}, type=synchron, dt=8, return={\ }]{PoolOperator}{StakerRegistry}
-  \end{umlcall}
-  
-  \begin{umlcall}[op={addListener(poolRegistry)}, type=synchron, dt=6.5, return={\ }]{PoolOperator}{StakerRegistry}
-  \end{umlcall}
-  
-  \begin{umlcall}[op={registerPool(..)}, type=synchron, dt=8, return={newCoinbaseAddress}]{PoolOperator}{PoolRegistry}
+  \begin{umlcall}[op={registerPool(..)}, type=synchron, dt=8, return={\ }]{PoolOperator}{PoolRegistry}
     \umlcreatecall[no ddots,x=14]{PoolRegistry}{PoolCoinbase}
-    \begin{umlcallself} [op={pool broken}, type=asynchron, dt=3]{PoolRegistry}
-    \end{umlcallself}
-  \end{umlcall}
-  
-  \begin{umlcall}[op={setCoinbaseAddress(..)}, type=synchron, dt=8, return={\ }]{PoolOperator}{StakerRegistry}
-    \begin{umlcall}[op={onCoinbaseAddressChange(..)}, type=synchron, dt=8, return={\ }]{StakerRegistry}{PoolRegistry}
-      \begin{umlcallself} [op={pool active}, type=asynchron, dt=2]{PoolRegistry}
-      \end{umlcallself}
+    \umlcreatecall[no ddots,x=14]{PoolRegistry}{PoolCustodian}
+    \begin{umlcall}[op={registerStaker(..)}, type=synchron, dt=1, return={\ }]{PoolRegistry}{StakerRegistry}
+    \end{umlcall}
+    \begin{umlcall}[op={addListener(poolRegistry)}, type=synchron, dt=6, return={\ }]{PoolRegistry}{StakerRegistry}
     \end{umlcall}
   \end{umlcall}
+  
 \end{umlseqdiag}
 \end{tikzpicture}

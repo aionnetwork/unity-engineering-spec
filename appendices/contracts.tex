@@ -23,7 +23,9 @@ Following are the AVM smart contracts (extracted as Java interfaces) for the sta
 
 \begin{lstlisting}[language = Java , escapeinside={(*@}{@*)}]
 interface StakerRegistry {
-    void registerStaker(Address signingAddress, Address coinbaseAddress);
+    void registerStaker(Address identityAddress, Address managementAddress,
+                        Address signingAddress, Address coinbaseAddress, 
+                        Address selfBondAddress);
     void vote(Address staker);
     void unvote(Address staker, long amount);
     void unvoteTo(Address staker, long amount, Address receiver);
@@ -37,7 +39,8 @@ interface StakerRegistry {
 }
 
 interface PoolRegistry extends StakerRegistryListener {
-    Address registerPool(byte[] metaData, int commissionRate);
+    Address registerPool(Address signingAddress, int commissionRate, 
+                         byte[] metaDataUrl, byte[] metaDataContentHash);
     void delegate(Address pool);
     void undelegate(Address pool, long amount);
     void redelegateRewards(Address pool);
@@ -45,9 +48,9 @@ interface PoolRegistry extends StakerRegistryListener {
     long withdraw(Address pool);
     int finalizeUnvote(Address owner, int limit);
     void finalizeTransfer(long transferId);
-    void enableAutoRedelegation(Address pool, int feePercentage);
-    void disableAutoRedelegation(Address pool);
-    void autoRedelegate(Address pool, Address delegator);
+    void enableAutoRewardsDelegation(Address pool, int feePercentage);
+    void disableAutoRewardsDelegation(Address pool);
+    void autoDelegateRewards(Address pool, Address delegator);
 }
 
 interface StakerRegistryListener {
@@ -57,8 +60,6 @@ interface StakerRegistryListener {
     void onListenerRemoved(Address staker);
 }
 
-interface PoolCoinbase {
-    void transfer(Address recipient, long amount);
-}
+interface PoolCoinbase { void transfer(Address recipient, long amount); }
 
 \end{lstlisting}
