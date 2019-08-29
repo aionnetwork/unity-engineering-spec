@@ -25,6 +25,8 @@
 \usepackage{lib/tikz-uml}
 \usepackage{tikzscale}
 \usepackage[colorlinks=true,linkcolor=blue,urlcolor=black,bookmarksopen=true]{hyperref}
+\usepackage[firstpage]{draftwatermark}
+\SetWatermarkScale{4}
 
 \setcounter{secnumdepth}{6}
 
@@ -54,7 +56,7 @@ This document is a complete specification for the Aion-Unity upgrade, documentin
 \end{abstract}
 
 \section*{Acknowledgements}
-This specification was produced in collaboration with the entire R\&D staff at the Aion Foundation, with major contributions from Yulong Wu, Yao Sun, Dipesh Pradhan, Jeff Disher, Aayush Rajasekaran, Sam Pajot-Phipps, Yunfei Zha and Ge Zhong. 
+This specification was produced in collaboration with the entire R\&D staff at the Aion Foundation, with major contributions from Yulong Wu, Yao Sun, Dipesh Pradhan, Jeff Disher, Aayush Rajasekaran, Shidokht Hejazi, Sam Pajot-Phipps, Yunfei Zha and Ge Zhong. 
 
 \newpage
 \tableofcontents
@@ -68,7 +70,6 @@ The key words \textit{MUST}, \textit{MUST NOT}, \textit{REQUIRED}, \textit{SHALL
 % paper body
 \input{staking-protocol.tex}
 % input{fixed-point.tex}
-\input{slashing.tex}
 
 % bibliography
 \pagebreak

@@ -13,23 +13,23 @@ The coin holder can either vote for themselves (increasing their power as a stak
 
 Any coin holder that votes for another staker (in order to earn a share of PoS block rewards in exchange for increasing the power of said staker in PoS) is referred to as a \textit{delegator}. Note that a delegator is not a staker, since they don't operate a node and contribute to PoS security.
 
-At any point, a delegator or a voter can choose to withdraw their bonded coins (reducing the PoS power of the staker delegated or voted to). When a delegator withdraws their delegated coins, they are said to \textbf{\textit{undelegate}}. When a voter withdraw their voted coins, they are said to \textbf{\textit{unvote}} or \textbf{\textit{unbond}}. In either scenario, when the coins in question get unbonded in the staking system, they are subject to a post-lock period (\cite{WZS19} \S4.1.1). After the post-lock period has elapsed, their coins exit the staking system and become \textbf{\textit{liquid}} (free to transfer to other users). 
+At any point, a delegator or a voter can choose to withdraw their bonded coins (reducing the PoS power of the staker delegated or voted to). When a delegator withdraws their delegated coins, they are said to \textbf{\textit{undelegate}}. When a staker withdraws their voted coins, they are said to \textbf{\textit{unvote}} or \textbf{\textit{unbond}}. In either scenario, when the coins in question get unbonded in the staking system, they are subject to a post-lock period (\cite{WZS19} \S4.1.1). After the post-lock period has elapsed, their coins exit the staking system and become \textbf{\textit{liquid}} (free to transfer to other users). 
 
 A delegator is allowed to \textbf{\textit{transfer}} their delegation between stakers (subject to stipulations discussed in a subsequent section). 
 
 \subsubsection{The Need for Delegation} \label{delegation_overview}
 In the PoW paradigm, mining pools allow participants with modest hash power to \textit{pool} their resources with strangers to achieve a more reliable outlay of rewards. Similarly, in PoS networks, \textit{delegation} allows users to transfer their rights to participate in the proof of stake (PoS) protocol to \textit{stake pools}. 
 
-The rationale for stake-delegation is very much in-line with the rationale for hash-power-pooling: since PoW miners controlling small amounts of hash power are not expected to run a full node in order to write blocks on rare occasions, we should not expect stakers with small amount of stake to do so either. Furthermore, while miners are generally technically proficient and commit their time to maintaining on-premises infrastructure, owners of stake in the network might lack the expertise or time to do so. Even if one has the willingness to operate a staking node, one might have too little stake to cover operational costs. 
+The rationale for stake-delegation is very much in-line with the rationale for hash-power-pooling: since PoW miners controlling small amounts of hash power are not expected to run a full node in order to write blocks on rare occasions, we should not expect stakers with a small amount of stake to do so either. Furthermore, while miners are generally technically proficient and commit their time to maintaining on-premises infrastructure, owners of stake in the network might lack the expertise or time to do so. Even if one has the willingness to operate a staking node, one might have too little stake to cover operational costs. 
 
 Delegation allows all coin holders of Aion to contribute to PoS security, regardless of the amount of coins they own, or their technical capabilities.
 
 \subsection{Solution Synopsis}
 
 \subsubsection{Staking Contract}
-All logic related to staking will be implemented on an AVM smart contract called the \textit{staker registry contract}. In order to participate in staking, coin-holders must send Aion to this contract, where the balance will reside, until the user decides to \textit{unstake}. Upon unbonding, after a post-active period has elapsed, the balance will be returned by the staking contract to the user's address (see \cite{WZS19} \S4.1.1 and \S5 for rationale and further exposition). Note, that the pre-active period as defined in \cite{WZS19} \S4.1.1 will be zero (i.e. no pre-active stake locking).  
+All logic related to staking will be implemented on an AVM smart contract called the \textit{Staker Registry contract}. In order to participate in staking, coin-holders must send Aion to this contract, where the balance will reside, until the user decides to \textit{unstake}. Upon unbonding, after a post-active period has elapsed, the balance will be returned by the staking contract to the user's address (see \cite{WZS19} \S4.1.1 and \S5 for rationale and further exposition). Note, that the pre-active period as defined in \cite{WZS19} \S4.1.1 will be zero (i.e. no pre-active stake locking).  
 
-This contract is core to the system; correct functioning of the protocol (PoS) depends on the state of this contract, in that the life-cycle of all bonded coins are managed by this contract. 
+This contract is core to the system; correct functioning of the protocol (PoS) depends on the state of this contract, in-so-far-as the lifecycle of all bonded coins are managed by this contract. 
 
 \subsubsection{Delegation Protocol}
 There exist a continuum of strategies to realize delegation in Aion, which can be characterized by the following extrema:
@@ -38,7 +38,7 @@ There exist a continuum of strategies to realize delegation in Aion, which can b
     \item \textbf{Opinionated}: The core protocol defines a rigid stake delegation protocol. Examples of such protocols include Cardano-Shelley \cite{KBC19} and Tezos \cite{Goo14}. This protocol would clearly define all stake delegation-related interactions between stakeholders and pools, like reward distribution schedule and fee structure.   
 \end{itemize}
 
-We take an approach that lies in-between the two extremes. In our approach, the delegation system is completely decoupled from the core protocol. The staking contract exposes a very simple interface to enable stake delegation (while maintaining security-related system invariants). This enables the development of arbitrary delegation protocols through the use of AVM smart contracts we will refer to as \textit{delegation contracts}; these contracts will primarily be responsible for distribution of rewards to delegators and managing the stake life-cycle, while it's delegated to a pool. Figure \ref{fig:delegation_scheme} offers a component-level sketch of how purported delegation contracts relate to the Staker Registry. 
+We take an approach that lies in-between the two extremes. In our approach, the delegation system is completely decoupled from the core protocol. The staking contract exposes a very simple interface to enable stake delegation (while maintaining security-related system invariants). This enables the development of arbitrary delegation protocols through the use of AVM smart contracts we will refer to as \textit{delegation contracts}; these contracts will primarily be responsible for distribution of rewards to delegators and managing the stake life-cycle, while it's delegated to a pool. Figure \ref{fig:delegation_scheme} offers a component-level sketch of how the purported delegation contracts relate to the core Staker Registry contract. 
 
 \tikzset{
     block/.style = {draw, fill=white, rectangle, minimum height=3em, minimum width=3em},
@@ -58,12 +58,12 @@ We take an approach that lies in-between the two extremes. In our approach, the 
 \end{figure}
 
 \paragraph{Public Delegation Protocol}
-A key goal in Unity system-design is the engagement of all Aion coin-holders in staking. To serve that goal, we further specify an opinionated \textit{public delegation protocol} (implemented as a delegation contract) we call the \textbf{Aion Public Delegation Standard (ADS)}. The corresponding contract is called the \textit{ADS Pool Registry}. This Aion-Unity upgrade will be shipped with the ADS and all foundation-supported staking user interfaces will support delegation as specified by this standard. 
+A key goal in Unity system-design is the engagement of all Aion coin-holders in staking. To serve that goal, we further specify an opinionated \textit{public delegation protocol} (implemented as a delegation contract) we call the \textbf{Aion Public Delegation Standard (ADS)}. The corresponding contract is called the \textit{Pool Registry}. This Aion-Unity upgrade will be shipped with the ADS and all foundation-supported staking user interfaces will support delegation as specified by this standard. 
 
 Furthermore, a clear specification and reference implementation for a public delegation standard allows third party tools like wallets to rapidly implement Aion stake-delegation in their products, to further amplify the accessibility of participating in staking as an Aion coin holder. 
     
 \paragraph{Custom Delegation Protocols}
-Since the public delegation protocol (ADS) is just another contract, leveraging the API exposed by the staker registry contract, one can theoretically construct any on-chain stake delegation protocol, build tools to support it, etc. 
+Since the public delegation protocol (ADS) is just another contract, leveraging the API exposed by the Staker Registry contract, one can theoretically construct any on-chain stake delegation protocol, build tools to support it, etc. 
 
 \subsubsection{Other Stake Interactions} \label{staker_reg_interactions}
 
@@ -75,52 +75,54 @@ For technically inclined users interested in running the equivalent of PoW's \te
 A very simple CLI will be shipped as part of the Aion-Unity upgrade to easily enable private staking capabilities. 
 
 \paragraph{Direct Delegation}
-The design of the Staker Registry enables any user with coins to \textit{vote} for any active staker in the staker registry which enables:
+The design of the Staker Registry enables any user with coins to \textit{vote} for any active staker in the Staker Registry which enables:
 \begin{itemize}
     \item \textbf{\textit{Off-chain Stake Pools}}: Users who do not wish to use the on-chain delegation functionality, can come to agreements off-chain about fees and rewards splitting with some registered staker, and bond their stake directly to them in the Staker Registry. When the bonded staker gets compensated for PoS participation via block rewards, they would presumably split the rewards with the users (off-chain), based on the staking power contributed to the staker by the user. 
     
-    \item \textbf{\textit{Naked Staking}}: A user can (inadvertently or deliberately) bond their coins to another user with whom they have no out-of-band agreement on rewards splitting. In such scenarios (since there is no built-in mechanism for rewards splitting in the Staker Registry), the staker in question is not obligated to share any marginal block rewards earned by an increased PoS power vis-à-vis the \say{directly} bonded tokens. Note that at no point is a user at risk of loosing their coins, only loss of PoS rewards which one could have received if one staked via private staking or delegation. 
+    \item \textbf{\textit{Altruistic Delegation}}: A user can (inadvertently or deliberately) bond their coins to some staker registered in the Staker Registry, with whom they have no out-of-band agreement on rewards splitting. In such scenarios (since there is no built-in mechanism for rewards splitting in the Staker Registry), the staker in question is not obligated to share any marginal block rewards earned by an increased PoS power vis-à-vis the \say{altruistically} delegated tokens. Note that at no point is a user at risk of loosing their coins, only loss of PoS rewards which one could have received if one staked via private staking or delegation. 
 \end{itemize}
 
 \subsubsection{Stake-Delegation User Interfaces}
-Very specific guidance and requirements are laid out in this document with respect to the responsibilities of any user interface (UI) for the Aion Public Delegation Standard (ADS). The specifications are requirements for what the UI must achieve, but no guidance is provided as to how to achieve it, to allow flexibility based on the medium (desktop, web, mobile), target audience, etc. 
+Very specific guidance and requirements are laid out in this document with respect to the responsibilities of any user interface (UI) for the Aion Public Delegation Standard (ADS). The specifications are requirements for what the UI must achieve, but no guidance is provided as to how to achieve it for implementation flexibility based on the medium (desktop, web, mobile), target audience, etc. 
 
 \subsection{System-Level Requirements}
 
-The following are key functional, non-functional and security requirements for the Staker Registry and Public Delegation Registry (ADS) contracts in Aion-Unity:
+The following are key functional, non-functional and security requirements for the Staker Registry and Pool Registry (ADS) contracts in Aion-Unity:
 
 \subsubsection{Staker Registry Contract}
 \begin{itemize}
     \item \textbf{Pseudo non-custodialness}: Technically, the term non-custodial in the context of PoS refers to systems where the coins never leave the user's account while the user is participating in staking, letting the user move those coins without restriction. Due to the design of Unity consensus \cite{WZS19}, restrictions on a staker's coins must be imposed (such as immobility and post-active period) to satisfy consensus security requirements. To reduce implementation complexity \cite{ZZW19}, the user must send their coins to the staking contract. This requirement states that any coins sent to the staking contract cannot be withdrawn by anyone other than the staker (i.e. the coins cannot be withdrawn by any attacker looking to abuse the contract).
     \item \textbf{Post-active period enforcement}: There must exist no code-path to unstake coins without the coins going through a post-active period. 
-    \item \textbf{Sovereignty over stake}: When delegating coins, the staker must not be able to affect the stake in any way (e.g. unstake, restake, etc.) 
-    \item \textbf{Auditability of delegation}: All delegations must be publically visible on-chain. 
+    \item \textbf{Sovereignty over stake}: In delegating coins, the delegate must not be able to affect the stake in any way (e.g. unbond, transfer delegation, etc.) 
+    \item \textbf{Auditability of delegation}: All stake delegations must be publically visible on-chain. 
     \item \textbf{Low-penalty delegation transfers}: Users should be able to transfer stake from one staker to another via an on-chain transaction, with minimal time-lock costs.
     \item \textbf{Mitigate key exposure}: The node run by staking pools will need to have some key that is used to sign produced blocks. In case of an incident where the node is compromised, it should be possible for the stake pool operator to revoke this key and replace it with a new one. This should not require any action from the delegator. 
     \item \textbf{Space and time complexity}: All new rules must be computable within \textit{reasonable} space and time complexity. 
     \item \textbf{Minimize economic attacks}: An economic attack arises where the costs incurred by the operators are not covered by the fees on the users of the system. Such situations allow users to impose costs on operators without paying the full costs themselves.
 \end{itemize}
 
-\subsubsection{Public Delegation Registry}
+\subsubsection{Pool Registry}
 \begin{itemize}
     \item \textbf{Sybil attack protection at the staking pool level}: An adversary can take over the network by registering a large number of stake pools, hoping to accumulate enough stake to mount an attack just by people randomly delegating to them. This attack should be made unfeasible by requiring stake pool operators to allocate a finite resource to each individual pool they register; this cannot be the cost of running a node.
     \item \textbf{Handle inactive stake pools}: Stake pools can cease to operate (lost keys, interest, etc.); we want to minimize the effect of this to the security and liveness of the system. 
     \item \textbf{Space and time complexity}: All new rules must be computable within \textit{reasonable} space and time complexity. 
 \end{itemize}
 
-\subsection{Coin Lifecycle} \label{stake_concerns}
+\subsection{Coin Lifecycle in Staker Registry} \label{stake_concerns}
 
-Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in, as it makes it's way through bonding and delegation life-cycles (across the ADS and Staker Registry contracts): 
+Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in, as it makes it's way through the bonding lifecycle in the Staker Registry.  
 
 \begin{itemize}
     \item \textbf{\textit{Liquid}}: A coin is liquid when it is owned by the user's account. In this state, the user is free to transact in the system (e.g. transfer to another user, stake, pay transaction fee for smart contract interactions, etc.).
-    \item \textbf{\textit{Staked}}: A coin is staked if is has been cast as a \say{vote} (\S\ref{sc_design} to a staker in the Staker Registry. 
-    \item \textbf{\textit{Transfer-pending}}: Stake can be transferred from one staker to another in the staker registry. When this action occurs, the coin must be locked for some short period (transfer-pending period) in order to not violate security invariants of the Unity consensus. The transfer lockout period is required to defend against the following attack vector. Consider a staker who has registered $N$ stake pool. If the transfer of stake was instantaneous, then for all $N$ pools, the staker could compute various PoS \say{time-to-next-block} deltas with different stake distributions, and select the distribution that maximizes their probability of winning the next block (assuming they win the current block).  
+    \item \textbf{\textit{Bonded}}: A coin is bonded if is has been cast as a \say{vote} (\S\ref{sc_design} to a staker in the Staker Registry. 
+    \item \textbf{\textit{Transfer-pending}}: Stake can be transferred from one staker to another in the Staker Registry. When this action occurs, the coin must be locked for some short period (transfer-pending period) in order to not violate security invariants of the Unity consensus. The transfer lockout period is required to defend against a version of the state grinding attack (as described in \cite{WZS19}): 
+    \begin{itemize} [label=,nosep]
+        \item \textit{Consider a staker who has registered $N$ stake pools. If the transfer of stake was instantaneous, then for all $N$ pools, the staker could compute PoS \say{time-to-next-block} with various allocations of stake across the staker's $N$ pools, and select the allocation that maximizes their probability of winning the next block (assuming they win the current block and can include these transfer transactions in the current block).}  
+    \end{itemize}
     \item \textbf{\textit{Thawing}}: Any time a coin has been staked (either through the staking contract or the delegation interface), a thawing period must be applied to preserve Unity consensus security invariants \cite{WZS19}. After the thawing period (defined in some number of blocks elapsed since the unstaking action) has elapsed, the coins go into the liquid state (i.e. get returned to the user's account). 
-    \item \textbf{\textit{Rewards-outstanding}}: When block rewards are distributed by the coin minting function in the protocol, the rewards get paid out to the pool-operator ADS contract. The ADS contract contains logic, upon receipt of rewards, to extract the operator fee from the block rewards and distribute it among the stakers, proportional to their delegated stake. The total reward sum is computed by the contract, with the contract tracking the fraction of the reward each of the parties (delegators, operators) are owed. There are several claims mechanisms available to all parties. After some amount of rewards have accumulated, one can send a transaction to withdraw the coins to their account (liquid). One can also send a transaction to manually re-delegate the rewards-outstanding coins to increase the total stake delegated. Lastly, one can enable the auto-rewards-delegation feature, which allows the rewards to be automatically re-delegated (at some expected interval). Due to the nature of rewards distribution (where rewards accumulate in a rewards outstanding state), some users might be interested in a \say{set it and forget it} approach of letting their stake compound automatically (via re-delegation of rewards).
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \tikzset{elliptic state/.style={draw,ellipse}}
 \begin{center}
@@ -128,7 +130,6 @@ Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in,
   \node[initial,elliptic state] (A) {$liquid$};
   \node[elliptic state, align=center] (B) [right of=A] {$staked$};
   \node[elliptic state] (D) [right of=B] {$thawing$};
-  \node[elliptic state, align=center, node distance=5cm] (E) [below of=A] {$rewards$\\$outstanding$};
   \node[elliptic state, align=center, node distance=3.5cm] (F) [above of=B] {$transfer$\\$pending$};
   \path (A) edge [align=center,above] node {vote} (B)
         (B) edge [above] node {unvote} (D)
@@ -136,10 +137,7 @@ Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in,
         (F) edge [align=right, bend left=30, right]  node {> transfer\\lockout} (B)
         (F) edge [loop left, align=right] node {$<$ transfer\\lockout} (F)
         (D) edge [loop right,align=left,right] node {$<$ unstake\\lockout} (D)
-        (D) edge [align=right,bend left=50, pos=0.25]  node {$>$ unstake lockout} (A)
-        (E) edge [align=right, bend left=20, pos=0.25]  node {withdraw} (A)
-        (E) edge [align=right, bend right=30, right, pos=0.2]  node {auto\\re-delegate} (B)
-        (E) edge [align=right, bend left=30, right, pos=0.2]  node {manual\\re-delegate} (B);
+        (D) edge [align=right,bend left=50, pos=0.25]  node {$>$ unstake lockout} (A);
 \end{tikzpicture}
 \end{center}
 \caption{States that a coin can be in within the skating and ADS system}
@@ -147,7 +145,7 @@ Figure \ref{fig:stake_lifecycle} outlines the \textit{states} that a coin be in,
 \end{figure}
 
 \subsection{Delegator Actions}
-The following are the actions that an Aion coin holder, seeking to delegate staking rights, can perform with respect to the Public Delegation Registry contract: 
+The following are the actions that an Aion coin holder, seeking to delegate staking rights, can perform with respect to the Pool Registry contract: 
 \begin{itemize}
     \item \textbf{Stake Management}
     \begin{itemize}
@@ -155,6 +153,7 @@ The following are the actions that an Aion coin holder, seeking to delegate stak
         \item \textit{\textbf{Undelegate stake}}: When a user decides that they want to withdraw any fraction of their funds from the staking service, they can perform an unstake (or more specifically un-delegate) action in the staking contract. For a period of time measured in number of blocks since the unstaking action, the coin will be in the thawing state; it will be held in the staking contract, but will neither contribute to stake securing the system, nor will it be liquid until the unbonding period has elapsed (see \cite{WZS19} for details).
         \item \textit{\textbf{Transfer-delegation}}: The user should be able to, without triggering the unbonding period, transfer the delegation of any proportion of their stake to another staking pool.
     \end{itemize}
+    \clearpage
     \item \textbf{Auto rewards delegation}: 
     \begin{itemize}
         \item \textit{\textbf{Opt-in auto rewards delegation}}: If the user did not opt into the auto-rewards delegation scheme, they can do so at any time while their stake is delegated, by sending a transaction to the delegation contract. 
@@ -168,35 +167,13 @@ The following are the actions that an Aion coin holder, seeking to delegate stak
     \end{itemize}
 \end{itemize}
 
-\subsection{Stake Pool Lifecycle} \label{pool_lifecycle}
-
-The staking pool life-cycle is very simple, as depicted in Figure \ref{fig:pool_lifecycle}. A staking pool can either be in the \textit{active} state or the \textbf{\textit{broken}} state. If the staking pool in the active state, it implies it is eligible to receive delegated stake and fulfill all responsibilities of a pool-operator within the protocol. The pool starts in the \textit{broken} state and remains so until the pool has been successfully initialized. Furthermore, if any of the pool invariants are violated (see \S\ref{sc_design}), the pool is set to the broken state. If the pool is in the broken state, no new delegations can be made to this pool. Note that any coins still delegated to a broken pool will still be effective as stake in the system until undelegated or transferred.  
-
-\begin{figure}[ht]
-\centering
-\tikzset{elliptic state/.style={draw,ellipse}}
-\begin{center}
-\begin{tikzpicture}[->,>=stealth',auto,transform shape,initial text={register pool}]
-  \node[initial,elliptic state] (A) {$broken$};
-  \node[elliptic state,node distance=6cm] (B) [right of=A] {$active$};
-  
-  \path (B) edge [align=center,loop above] node {management\\functions} (A)
-        
-        (A) edge [align=center, bend left=30] node {satisfy pool\\invariants} (B)
-        (B) edge [align=center, bend left=30] node {violate pool\\invariants} (A);
-\end{tikzpicture}
-\end{center}
-\caption{Staking pool life-cycle}
-\label{fig:pool_lifecycle}
-\end{figure}
-
 \subsection{Pool Operator Actions} \label{pool_actions}
 
 The following actions can be performed by the staking pool operator during the course of the life-cycle of the staking pool: 
 \begin{itemize}
-    \item \textbf{\textit{Register}}: To facilitate easy discovery of stake pool by users of the system, as part of pool initialization, every pool must register with the \textit{(ADS Public Pool Registry}. This registry will contain a list of all active pools. The registering pool must provide the following data: 
+    \item \textbf{\textit{Register}}: To facilitate easy discovery of stake pool by users of the system, as part of pool initialization, every pool must register with the Pool Registry contract. This registry will contain a list of all active pools. The registering pool must provide the following data: 
     \begin{itemize}
-        \item \textit{Fee charged}: A number between 0\%-100\%, which indicates the fees the pool charges for provided service. See \S\ref{sc_design} for details on how this number is applied to block rewards and fees are distributed to pool operators. 
+        \item \textit{Fee charged}: A number between 0\%-100\% (up to two (2) decimal place precision), which indicates the fees the pool charges for provided service. See \S\ref{sc_design} for details on how this number is applied to block rewards and fees are distributed to pool operators. 
         \item \textit{Metadata URL}: The pool operator must host a JSON file at this URL (HTTPS over TLS), containing the metadata that is displayed in ADS user interfaces (\S\ref{ads_ui}). See the section on the metadata protcol (\S\ref{metadata_protocol}) for requirements on what this JSON object should contain and other ancillary concerns. 
         \item \textit{Metadata content-hash}: This is the Blake2b hash of the JSON object hosted at the metadata URL. This is used as an on-chain commitment of the data hosted at the metadata URL. See \S\ref{metadata_protocol} for details on the function of this content-hash within the metadata protocol. 
         \item \textit{Coinbase address}: This is the public key that receives any fees collected by the pool operator (see \S\ref{key_management} on the key-management scheme in the ADS). 
@@ -205,8 +182,11 @@ The following actions can be performed by the staking pool operator during the c
     
     Before registering with the Pool Registry, the pool operator must first register as a staker in the Staker Registry. When signing-up in the Staker Registry, the pool operator must bond some minimum coin amount (see \S\ref{self_bond} for details). Furthermore, the pool operator must maintain an adequate ratio of stake contributions to self-bonded stake (see \S\ref{self_bond} on self bond requirements for details).
     
-    \item \textbf{\textit{Tear-down}}: No graceful pool tear-down functionality has been built into the Pool Registry, to simplify the state-space of the contract. Instead, in a pool operator no longer wishes to a operate a pool, they can instead violate any of the pool invariants described in \S\ref{sc_design} to put the pool into a \textit{broken} state. 
-    
+    \item \textbf{\textit{Tear-down}}: No graceful pool tear-down functionality has been built into the Pool Registry, to simplify the state-space of the contract. Instead, if a pool operator no longer wishes to a operate a pool, they should: 
+    \begin{itemize}[label=--,nosep]
+        \item Send a message using the meta-data protocol that they will no longer be an active pool. 
+        \item Withdraw their self-bonded stake (violating the pool invariants and putting the pool into a \textit{broken} state. 
+    \end{itemize}
     \item \textbf{Management functions}:
     \begin{itemize}
         \item \textbf{\textit{Change fee}}: The pool operator is allowed to change the fee charged for operating the pool, due to market conditions, etc. Note that the fee change takes effect immediately (as soon as the fee-change message is received by the contract by the pool operator). Upon fee-change, delegators take appropriate measures (e.g. stay delegated to the pool, transfer their delegation to another pool, etc.).
@@ -226,28 +206,8 @@ Since the pool operator is the entity that gets delegated staking rights from us
 \end{itemize}
 The operator is required to keep at-least 99.9\% (\say{three nines}) availability, which corresponds to at-most 8.77 hours of down-time per year. Pool operators are encouraged to host a web page, advertising self-reported up-times and hardware specification, among other pertinent information about pool operations, to instill confidence in and advertise the operator's operational capabilities. 
 
-\subsection{User Symmetric-key Rights } 
-The staker and pool registries disperses system-responsibilities over several asymmetric key-pairs, to carefully refine the security requirements on each key, which is standard practice in industry.
-
-\paragraph{Staker registry symmetric-key rights} A staker in the  operator is required to manages three keys, each of which corresponds to a distinct function in the operation of the pool: 
-
-
-
-\paragraph{} This key entitles it's holder the rights to transfer any coins available in the account associated with this key, as well as the rights to delegate and undelegate the owned coins' staking rights. This key should be secured via means of a hardware security module (e.g. Ledger, Trezor, etc.), with appropriate backup protocols in place. If this key is compromised, any delegated stake can be undelegated by the attacker, and then subsequently transferred to another account that the user does not control (after the thawing period has elapsed). 
-
-The user stake is protected by a \say{layer of indirection} designed into the staker and pool registry contracts. Coin delegation, undelegation and transfer of delegation rights can only be performed by the user's personal symmetric key (no other entity, including the staking pool operator can retrieve the user's coins while delegated). Therefore, the only way a user's coin can be compromised is if this secret key is leaked. 
-    
-\paragraph{Pool operator symmetric-key rights} The pool operator is required to manages three keys, each of which corresponds to a distinct function in the operation of the pool: 
-\begin{itemize}
-    \item \textit{Coinbase address}: PoS block rewards get paid out to this key. If this address corresponds to a smart contract (e.g. ADS), then this contract must be secured from known attacks on contract balances. If this address is a user account, the receiver of the rewards must secure this account appropriately.  
-    \item \textit{Block-signing key (hot key)}: This key entitles it's holder the rights to produce blocks on behalf of ala stake delegated to the staker. This key needs to be kept online while connected to the Aion-Unity network, since this key is required to sign any blocks won by the staker in the course of the PoS \say{lottery}. At the moment, the guidance is to load this private key in the memory of an appropriately permissioned process, or in a commercial HSM (e.g. YubikeyHSM 2) that supports EdDSA (ED25519) signatures. If this key is compromised, the attacker can censor (deny inclusion of) transactions within the blocks supported by the delegated stake. Furthermore, block signing key can't be changed too fast (subject to a cooling period) to avoid a variant of the stake grinding attack (as described in \cite{WZS19}), where the variable that an attacker can \say{grind} is the block-signing key to give the attacker an advantageous time-to-next-block. 
-    \item \textit{Management key (cold key)} This key entitles it's holder the rights to all pool management tasks \S\ref{pool_actions}. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. There is no mechanism to replace this key with another one, since this (public) key is the identity of this pool; this public key is used by any entities addressing this pool for any on chain interactions with this pool (e.g. delegators use this public key to identify the pool they would wish to delegate their staking rights to). This is the key used by the operator to register the pool. If this key is compromised, the pool is compromised and must be shut down. If this key is compromised, the attacker can take over pool operations (e.g. shut-down the pool, etc.). It is important to note that even if this \say{master pool key} is compromised, the delegated stake is in no risk; to reiterate, no key, except for the user's very own, has rights to alter any votes or withdraw any bonded coins. In the event of a management key compromise, the user must simply transfer delegation rights to another pool with sufficient delegation capacity to resume any interruptions in rewards outlays. 
-\end{itemize}
-
-Note that when registering for a pool (\S\ref{pool_actions}), do not use exchange addresses for the rewards key or the block-signing keys. The operator needs to control the private key for the rewards account in order to (send a transaction and) retrieve the rewarded coins, which accumulate in the delegation contract. Needless to say, the operator needs to control the private key for the block-signing account in order to sign the blocks on their full node.   
-
 \subsection{Metadata Protocol} \label{metadata_protocol}
-When an operator registers a new staking pool in the delegation contract (ADS), the new pool gets added to an on-chain registry of all active staking pools. During registration, the pool operator is required to provide metadata about the pool (e.g. logo, web-page, human-readable name, etc.). This metadata could then be consumed by user interface enabling stake delegation in Aion-Unity. 
+When an operator registers a new staking pool, the new pool gets added to an on-chain registry of all active staking pools. During registration, the pool operator is required to provide metadata about the pool (e.g. logo, web-page, human-readable name, etc.). This metadata could then be consumed by user interface enabling stake delegation in Aion-Unity. 
 
 We define an explicit protocol for metadata management, which involves both on-chain and off-chain actions. This protocol standardizes the way any user interfaces enabling delegation on Aion-Unity can retrieve rich data about staking pools, which empowers both pool operators and delegators: 
 \begin{itemize}
@@ -267,23 +227,23 @@ When a staking pool registers to the ADS, the pool operator must provide a \text
 
 The JSON must be valid according to the RFC 7159 JSON specification \cite{rfc7159}. The hash of the JSON object must match the content hash provided. The document must be less than $1024\times1024$ bytes (1 mb). All characters must be UTF8 encoded. The document hosting service must guarantee three nines availability (99.9\% uptime). The Blake2b hash of the JSON object must match the content hash provided on-chain. 
 
-We further propose the use of \textit{proxy servers} to cache the list of staking pools and their associated metadata. This enables rapid implementation of ADS user interfaces, since one could query a web-service to retrieve this list, as opposed to querying each metadata URL in the staking pool registry. The implementation of this server is very simple:
+We further propose the use of \textit{proxy servers} to cache the list of staking pools and their associated metadata. This enables rapid implementation of ADS user interfaces, since one could query a web-service to retrieve this list, as opposed to querying each metadata URL in the staking Pool Registry. The implementation of this server is very simple:
 \begin{itemize}
-    \item \textit{Pool metadata caching}: When an operator updates the metadata hosted at the metadata URL, they must also update the metadata content hash on-chain. The proxy server polls the pool registry, listening for changes in content hash. When the content hash changes, the cache is invalidated and the new metadata is loaded into the cache. 
+    \item \textit{Pool metadata caching}: When an operator updates the metadata hosted at the metadata URL, they must also update the metadata content hash on-chain. The proxy server polls the Pool Registry, listening for changes in content hash. When the content hash changes, the cache is invalidated and the new metadata is loaded into the cache. 
     \item \textit{Security screening}: The proxy server shall implement rules to filter out malicious content in the metadata. As attackers evolve mechanisms to attack the user interfaces, this simple server can be adaptively updated quickly in response. 
 \end{itemize}
 
 To address concerns around centralization and censorship of pool lists by the proxy server, we will open-source the proxy server implementation and encourage community participants to run these proxy servers. Furthermore, we require any ADS user interface to be configurable to query a number of these proxy servers.
 
-\paragraph{Alternative approaches} An alternative approach considered for the design of the metadata protocol was to implement the pool registry off-chain. There were centralization risks associated with this approach, namely the censorship by registry-maintainers of pools on this list (either by omission or manipulation of rankings). 
+\paragraph{Alternative approaches} An alternative approach considered in the design of the metadata protocol was to implement the Pool Registry off-chain. There were centralization risks associated with this approach, namely the censorship by registry-maintainers of pools on this list (either by omission or manipulation of rankings). 
 
-Another approach that was considered was storing the metadata directly on-chain (and doing away with the metadata-URL and proxy server scheme). This strategy was not selected due to flexibility concerns. The metadata is a field primarily used by pool operators as an advertisement avenue; this schema can conceivably be required to adopt additional fields to improve richness of pool metadata. In addition, this scheme allows for the metadata to become much larger than currently specified, without concerns of block size restrictions or on-chain data bloat. 
+Another approach considered was storing the metadata directly on-chain (and doing away with the metadata-URL and proxy server scheme). This strategy was not selected due to flexibility concerns. The metadata is a field primarily used by pool operators as an advertisement avenue; this schema can conceivably be required to adopt additional fields to improve richness of pool metadata. In addition, this scheme allows for the metadata to become much larger than currently specified, without concerns of block size restrictions or on-chain data bloat. 
 
 Although this operator-hosted metadata scheme increases the implementation complexity slightly on part of the pool operators, it opens-up the opportunity to improve the quality of service of the ADS user interfaces in the future. 
 
 \subsection{Rewards-splitting Scheme} \label{rewards_splitting}
 
-Rewards sharing in the ADS is an automatic process that does not require any action on part of the stake pools. For each block that a pool \say{wins}, the block rewards are split between the operator and the delegators using the following scheme: first the operator fee is deducted from the block rewards, then the remaining balance is split between the delegators, weighted by their respective stakes pledged to the pool.
+Rewards sharing must be an on-chain, automatic process that does not require any action on part of the pool operator. For each block that a pool \say{wins}, the block rewards are split between the operator and the delegators using the following scheme: first the operator fee is deducted from the block rewards, then the remaining balance is split between the delegators, weighted by their respective stakes pledged to the pool. See \S\ref{f1-rewards} for details regarding how this rewards splitting is implemented. 
 
 For example, if the block reward is 5 coins, the pool fees are 20\% and there are three delegators, whose pledges account for 50\%, 37.5\% and 12.5\% of the pools total stake respectively. Then the rewards distribution (for that block) will look like the following: 
 \begin{itemize}[label=--,nosep]
@@ -305,11 +265,11 @@ We propose imposing a self-bond requirement on all stakers registered in the Sta
 
 First, this creates a minimum cost (outside of the cost to run computer hardware) for someone to become a staker. This adds a barrier for anyone looking to launch a sybil attack (a single stakeholder creating a large number of pools in the hopes of dominating PoS voting power by means of random delegators choosing their pool). 
  
-Second, this facilitates the implementation of a slashing mechanism to punish any misbehaviour (protocol deviation) on part of the pool operator (see \S\ref{slashing}. If there were no self bond requirement, the pool operator has no \say{skin in the game}, and could behave maliciously (w.r.t the protocol) with impunity. 
+Second, this facilitates the (potential) implementation of a slashing mechanism\footnote{slashing mechanisms will be considered in subsequent protocol updates} to punish any misbehaviour (protocol deviation) on part of the pool operator. If there were no self bond requirement, the pool operator has no \say{skin in the game}, and could behave maliciously (w.r.t the protocol) with impunity. 
 
-\paragraph{Pool Operators} Pool operator should earn staking rewards proportional to their self bond as a percentage of the total delegations to the pool. Therefore, the self bonded stake committed by the pool operator must be delegated through the ADS. 
+\paragraph{Pool Operators} Pool operators should earn staking rewards for their self-bonded stake, just like any other delegator in the pool. Therefore, the pool operator's self bonded stake must be delegated through the Pool Registry contract. 
 
-\subsection{Restricting Pool Size (Optional)} \label{self_bond_percentage}
+\subsection{Restricting Pool Size} \label{self_bond_percentage}
 Designing incentive mechanisms that promote decentralization in PoS delegation protocols is an open problem. PoW has a tendency to centralize via the creation of mining pools; in the Bitcoin network, mining pools have been observed to control over 50\% of network hash-rate on occasion \cite{RJZ+19}. The design of a public stake-delegation protocol (ADS) for Aion-Unity requires mechanisms to incentivize decentralized behaviour, to avoid some of the pitfalls PoW mining pools have encountered. 
 
 The challenge that lies at the heart of such a design is the inherent trade-off between efficiency and decentralization: 
@@ -329,23 +289,25 @@ This creates a restriction the the size of the pools, to discourage the formatio
 Although this scheme does not provably deter centralization, it produces some barriers to sybil attacks and pools becoming too large, while enabling a large number of honest pools to operate in the PoS ecosystem.
 
 \subsection{System Parameter Summary} \label{unspecified_parameters}
-The following is a summary of the system in the Aion-Unity implementation \textcolor{red}{which are yet to be defined}: 
+The following is a summary of the system in the Aion-Unity implementation \textcolor{red}{(to be updated in a subsequent draft)}: 
 \begin{itemize}
-    \item \textit{Self-bond minimum}: This refers to the minimum amount of bond required to be \say{put up} by the staker. See \S\ref{self_bond} for details.
+    \item \textit{Self-bond minimum}: This refers to the minimum amount of bond required to be \say{put up} by a staker in the Staker Registry. See \S\ref{self_bond} for details.
+    \item \textit{Self-bond percentage}: This refers to the minimum amount a stake a pool operator is required to have bonded, as a proportion of the total stake delegated to the pool (see \S\ref{self_bond_percentage} for details).
     \item \textit{Post-active (thawing) period}: This refers to the time (in blocks) that stake is immobile and ineffective (w.r.t. PoS staking) after a staker has initiated a stake withdrawal (either via an undelegation or unstake operation). See \S\ref{stake_concerns} for details. 
     \item \textit{Transfer lockout period}: This refers to the time (in blocks) that stake is immobile and ineffective (w.r.t. PoS staking) after a staker has initiated a stake transfer to another staker. See \S\ref{stake_concerns} for details. 
     \item \textit{Staking (per-block) rewards}: This refers to the computation of the total per-block rewards disbursed to the proposer of a PoS block. This mechanism will be discussed in an upcoming section of this paper. 
 \end{itemize}
 
+\clearpage
 \subsection{User Interface Concerns} \label{ads_ui}
 In the following section, we don't define any implementation guidelines; but rather we specify some key features that the user interface must employ in the implementation of the public delegation system (ADS). 
 
 \subsubsection{Pool Registry Presentation} \label{registry_presentation}
-The user interface shall produce a list of all active and retired pools in the stake pool registry. For each pool any pertinent information required by the user in order to make delegation decisions should be presented (e.g. fee, capacity remaining, rewards estimates, etc.). The user should be able to delegate to multiple pools and view all their outstanding delegations and rewards earned from each delegation (at the block-level resolution). 
+The user interface shall produce a list of all active and retired pools in the stake Pool Registry. For each pool any pertinent information required by the user in order to make delegation decisions should be presented (e.g. fee, capacity remaining, rewards estimates, etc.). The user should be able to delegate to multiple pools and view all their outstanding delegations and rewards earned from each delegation (at the block-level resolution). 
 
-The user interface can retrieve the pool registry and associated metadata from the metadata-proxy server (as defined in \S\ref{metadata_protocol}). If the metadata is malformed (i.e. any of the metadata rules defined in \S\ref{metadata_protocol} are violated), the metadata will be unavailable on the proxy servers; UI should be designed to handle such scenarios. Furthermore, the UI should be configurable to query a number of metadata-proxy servers to promote diversity in metadata-proxy server providers. 
+The user interface can retrieve the Pool Registry and associated metadata from the metadata-proxy server (as defined in \S\ref{metadata_protocol}). If the metadata is malformed (i.e. any of the metadata rules defined in \S\ref{metadata_protocol} are violated), the metadata will be unavailable on the proxy servers; UI should be designed to handle such scenarios. Furthermore, the UI should be configurable to query a number of metadata-proxy servers to promote diversity in metadata-proxy server providers. 
 
-In order to help users make a rational decisions with respect to their stake delegations, we propose that the pool registry listing should be default-sorted using some weighted function of:  
+In order to help users make a rational decisions with respect to their stake delegations, we propose that the Pool Registry listing should be default-sorted using some weighted function of:  
 \begin{itemize}[label=--,nosep]
     \item the fees charged by the pool, 
     \item the apparent performance of the pool (see \S\ref{apparent_perf}), and
@@ -379,7 +341,7 @@ The UI is responsible to produce notifications for all key life-cycle events for
 The UI must notify a user when a pool goes into the \textit{broken} stake and changes it's fees (\S\ref{pool_actions}). Any \textit{broken} pools must be clearly identified. The user should be able to transfer any delegations from a \textit{broken}  pool to an active pool at any time. 
 
 \paragraph{Inactive and Underperforming Pools}
-The should monitor the attractiveness score (\S\ref{registry_presentation}) of all the pools the user has delegated stake to, in order to notify the user of any significant drops in this metric. Particularly, any significant drops in this metric implies one or more of the following things: 
+The user should monitor the attractiveness score (\S\ref{registry_presentation}) of all pools one has delegated stake to, in order to notify the user of any significant changes in this metric; particularly, large drops in this metric implies one or more of the following things: 
 \begin{itemize}[label=--,nosep]
     \item A large amount of stake has left the pool.
     \item The pool's average up-time has dropped significantly (operator has stopped producing blocks). 
@@ -387,9 +349,9 @@ The should monitor the attractiveness score (\S\ref{registry_presentation}) of a
     \item The rewards earned by the user have diminished significantly. 
 \end{itemize}
 
-This way, if the pool ceases to operate without being properly retired, it's delegators will be incentivized to re-delegate. 
+This way, if the pool ceases to operate without being properly retired, it's delegators will be incentivized to transfer their delegation to another pool. 
 
-
+\clearpage
 \subsection{Smart Contract Design} \label{sc_design}
 Here, we outline the design of the smart contract implementation of the staking and delegation system in Aion-Unity. The system consists of three distinct contracts (with their relationship depicted in Figure \ref{fig:contract_arch}):
 
@@ -421,9 +383,9 @@ Here, we outline the design of the smart contract implementation of the staking 
         \item and splitting the rewards among the pool operator and delegators. 
     \end{itemize}
     This contract implements the StakerRegistryListener interface, which enables this contract to be notified about changes made by a pool operator in the StakerRegistry to its signing and coinbase addresses (see \S\ref{pool_states} for details). 
-    \item \textbf{\textit{Pool Coinbase Contract}}: This contract is spawned by the pool registry contract for each pool it instantiates. The pool's coinbase contract receives block rewards on behalf of the pool. For a particular pool, when the operator or any of the delegators request a withdrawal (in the PoolRegistry), the coins are withdrawn from this contract by the PoolRegistry. This is an implementation artifact and the end user should never need to understand the function of this contract. It is here to collect rewards. 
+    \item \textbf{\textit{Pool Coinbase Contract}}: An instance of this contract is spawned by the Pool Registry contract for each pool it instantiates. The pool's coinbase contract receives block rewards on behalf of the pool. For a particular pool, when the operator or any of the delegators request a withdrawal (in the PoolRegistry), the coins are withdrawn from this contract by the PoolRegistry. This is an implementation artifact; the end user should never need to understand the function of this contract. 
     
-    We now outline the rationale for this design. Recall that the PoolRegistry has no special privileges. The standard way block rewards are disbursed is by crediting the coinbase account cited in the block header. Since all pools and their states are managed in the PoolRegistry contract, if the block rewards for all pools were paid to the PoolRegistry contract, the contract could not figure out which pool the disbursement was intended for (since no contract code gets executed by the protocol upon block reward outlay). Therefore, the PoolRegistry must spawn and manage a unique contract (per pool) to receive block rewards in the standard way, and then retrieve these rewards from this contract when withdrawals are requested by any delegator or operator.  
+    We now outline the rationale for this design: recall that the PoolRegistry has no special privileges. The standard way block rewards are disbursed is by crediting the coinbase account cited in the block header. Since all pools and their states are managed in the PoolRegistry contract, if the block rewards for all pools were paid to the PoolRegistry contract, the contract could not figure out which pool the disbursement was intended for (since no contract code gets executed by the protocol upon block reward outlay). Therefore, the PoolRegistry must spawn and manage a unique contract (per pool) to receive block rewards in the standard way, and then retrieve these rewards from this contract when withdrawals are requested by any delegator or operator.  
 \end{itemize}
 
 \subsubsection{Rewards Distribution Algorithm} \label{f1-rewards}
@@ -432,12 +394,13 @@ One critical requirement regarding rewards sharing is that \say{rewards sharing 
 
 First, lets consider the naive solution to the problem of block rewards distribution. Assume some hypothetical \say{onBlockProduced} function that executes as the last transaction in a PoS block produced by a staking pool. In this function, the block rewards are be disbursed to the pool's operator and delegators. The time-complexity of this function is linear in the number of delegators in the pool. Since the disbursement to each delegator requires at-least one state update (database write), state updates linear in the number of delegators in the pool would need to be performed. Furthermore, since state updates are a fairly costly operation in the Aion-AVM regime, especially for large pools, updating the state for every delegator in a pool alone, could easily surpass the total gas limit of a block (which represents the maximum amount of computation that network participants can perform in the validation of blocks, while keeping the block-time stable). Since the combined gas cost for disbursements and the included transactions in a block cannot exceed the total block gas limit, this naive solution is clearly impractical: consider a \say{full} PoS block; there is no gas budget left (in the block) for rewards disbursement!  
 
-\paragraph{F1 Rewards Distribution} A more clever solution this problem was proposed by Ojha \cite{Ojh19}. A detailed description of the rewards distribution mechanism is out of the scope of this report (please refer to \cite{Ojh19} or a toy-implementation by the author \cite{Sha19}). 
+\paragraph{F1 Rewards Distribution} A clever solution this problem was proposed by Ojha \cite{Ojh19}. A detailed description of the rewards distribution mechanism is out of the scope of this report (please refer to \cite{Ojh19} or a toy-implementation by the author \cite{Sha19}). 
 
 This algorithm moves all rewards distribution computation from some hypothetical \say{onBlockProduced} function (which is not available in the Aion protocol to begin with), to any events where the rewards-per-unit-stake changes (e.g. delegate, undelegate, withdraw, etc.). The rewards distribution is still linear in the number of delegators, but the computation is amortized over the interactions users have with the system (i.e. all fee distribution computations are \say{fuelled by} user-provided gas).   
 
 Furthermore, this algorithm is approximation-free; in the rewards distribution calculations, the only source of approximation is finite decimal precision, which cannot be avoided (confirmed using simulation in \cite{Sha19}).  
 
+\clearpage
 \subsubsection{Asynchronous Tasks}
 There are several instances of \say{asynchronous} tasks in the Aion-Unity staking and stake delegation systems: 
 \begin{itemize}
@@ -446,15 +409,15 @@ There are several instances of \say{asynchronous} tasks in the Aion-Unity stakin
     \item \textit{\textbf{Auto Rewards Delegation}}: Rewards earned by delegators in the system can be \say{auto-delegated}; i.e. coins earned as part of block rewards can be automatically cast to stake on behalf of the delegator.  
 \end{itemize}
 
-These features are asynchronous in the sense that they cannot be implemented within one transaction initiated by the user; they require some action by the protocol itself (not initiated by a user), after some condition on contract or chain state has been met.   
+These features are asynchronous in the sense that these interactions cannot be completed within one transaction initiated by the user; they require some action by the protocol itself (not initiated by a user), after some condition on contract or chain state has been met.   
 
-In the case of unbonding and transfer stake, they are examples of time-locks, which require an action from the system, delayed into the future from some trigger-action. On the other hand, auto rewards delegation (in it's most trivial incarnation) is a case of the protocol taking an action on behalf of the user upon an event (disbursement of rewards). 
+In the case of unbonding and transfer stake, they are examples of time-locks, which require an action from the system, delayed into the future from some trigger-action. On the other hand, auto rewards delegation (in it's most trivial incarnation) is a case of the protocol taking an action on behalf of the user upon an event (disbursement of rewards).
 
 No mechanism exists in the protocol for transactions to be scheduled in the future or be automatically triggered if a (chain or contract) state change occurs, since it violates security constraints of the AVM computation metering system. 
 
-Therefore, we had to flatten the aforementioned features into two disparate transactions: an initiating transaction and a finalizing transaction. The initiating transaction is sent by a user looking to affect their state (unbond, transfer or enable auto rewards delegation). The finalizing transaction can be performed by anyone in the system (including the user himself) in order to unwind the initiated action.
+Therefore, the aforementioned features must be implemented vis à vis two disparate transactions: an initiating transaction and a finalizing transaction. The initiating transaction is sent by a user looking to affect their state (unbond, transfer or enable auto rewards delegation). The finalizing transaction can be performed by anyone in the system (including the user himself) in order to complete the initiated action.
 
-We considered incentives that people would have to make finalization calls on other users' behalf. The following mechanisms were considered
+We considered incentives that people would have to make finalization calls on other users' behalf. The following mechanisms were considered:
 \begin{enumerate}
     \item The finalization function could be called by the initiator of the asynchronous transaction. 
     \item If the asynchronous transaction involves movement of coins (e.g. auto rewards delegation), one could attach a fee that callers of the finalization function could collect. The idea is that bounty-seekers could scrape accounts registered for this finalization function; they would wait for enough coins to be accumulated such that the fee collected upon a function call exceed the caller's transaction cost by some profit threshold. 
@@ -467,53 +430,70 @@ In the case of auto rewards delegation, strategy 2 is recommended. In the case o
 \subsection{Key Management} \label{key_management}
 The staker and pool registries disperses system-responsibilities over several asymmetric key-pairs, to carefully refine the security requirements on each key, which is standard practice in industry.
 
-\paragraph{Staker registry symmetric-key rights} \label{km_staker} A staker is required to manage a lot of keys. pool operator is required to manages three keys, each of which corresponds to a distinct function in the operation of the pool: 
+\paragraph{Staker registry symmetric-key rights} \label{km_staker} A  (private) staker required to manage the following five (5) keys, each of which correspond to a distinct function: 
 \begin{itemize}
-    \item \textit{Identity key}: The address corresponding to this key becomes the identity of the staker in the staker registry system. This key cannot be used to perform any management actions in the context of the staker registry. Each identity key can only be used once to register a staker (since identities are unique in the staker registry). 
+    \item \textit{Identity key}: The address corresponding to this key becomes the identity of the staker in the Staker Registry system. This key cannot be used to perform any management actions in the context of the Staker Registry. Each identity key can only be used once to register a staker (since identities are unique in the Staker Registry). There is no mechanism to replace this key with another one.
     
-    \item \textit{Management key}: The address corresponding to this key is recording upon staker registration and there is no mechanism to replace this key with another one. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. This key has the following management rights:
+    \item \textit{Management key (cold key)}: The address corresponding to this key is recorded upon staker registration and there is no mechanism to replace this key with another one. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. This key has the following management rights:
     \begin{itemize} [label=--,nosep]
         \item Change registered coinbase address
         \item Change registered block signing address
         \item Change registered self-bond address
         \item Set the active status of the poo
-        \item Attach and remove any (staker registry) listeners 
+        \item Attach and remove any (Staker Registry) listeners 
     \end{itemize}
     
     \item \textit{Block-signing key (hot key)}: This key entitles it's holder the rights to produce blocks on behalf of ala stake delegated to the staker. This key needs to be kept online while connected to the Aion-Unity network, since this key is required to sign any blocks won by the staker in the course of the PoS \say{lottery}. At the moment, the guidance is to load this private key in the memory of an appropriately permissioned process, or in a commercial HSM (e.g. YubikeyHSM 2) that supports EdDSA (ED25519) signatures. If this key is compromised, the attacker can censor (deny inclusion of) transactions within the blocks supported by the delegated stake. Furthermore, block signing key can't be changed too fast (subject to a cooling period) to avoid a variant of the stake grinding attack (as described in \cite{WZS19}), where the variable that an attacker can \say{grind} is the block-signing key to give the attacker an advantageous time-to-next-block. 
     
     \item \textit{Coinbase address}: PoS block rewards get paid out to the address corresponding to this key. If the address corresponding to this key is a smart contract, then it must be secured from known attacks on contract balances. If this address is a user account, the receiver of the rewards must secure this account appropriately.
     
-    \item \textit{Self-bond key}: The address corresponding to this key must bond enough balance to satisfy staker registry's self-bond requirements \S\ref{self_bond}. 
+    \item \textit{Self-bond key}: The address corresponding to this key must bond enough balance to satisfy Staker Registry's self-bond requirements \S\ref{self_bond}. 
 \end{itemize}
 
 
-\paragraph{Pool operator symmetric-key rights} The pool operator is required to manages two private keys, each of which corresponds to a distinct function in the operation of the pool: 
+\paragraph{Pool operator symmetric-key rights} The pool operator is required to manage two private keys, each of which corresponds to a distinct function in the operation of the pool: 
 \begin{itemize}
    
-    \item \textit{Block-signing key (hot key)}: This key in the context of a pool is functionally equivalent to the corresponding key described in the section above (\S\ref{km_staker}). Same recommendations and guidelines apply. This key must be provided upon instantiation of the pool. 
+    \item \textit{Block-signing key (hot key)}: This key is functionally equivalent to the corresponding key described in the section above (\S\ref{km_staker}). Same recommendations and guidelines apply. This key must be provided upon instantiation of the pool. 
     
     \item \textit{Management key (cold key)}  This is the key used by the operator to register the pool. This key entitles it's holder the rights to all pool management tasks \S\ref{pool_actions}. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. There is no mechanism to replace this key with another one, since this (public) key is the identity of this pool; this public key is used by any entities addressing this pool for any on chain interactions with this pool (e.g. delegators use the address corresponding to this key-pair to identify the pool they would wish to delegate their staking rights to). 
     
-    If this key is compromised, the pool is compromised and must be shut down. If this key is compromised, the attacker can take over pool operations (e.g. shut-down the pool, etc.). It is important to note that even if this \say{master pool key} is compromised, the delegated stake is in no risk; to reiterate, no key, except for the user's very own, has rights to alter any votes or withdraw any bonded coins. In the event of a management key compromise, the user must simply transfer delegation rights to another pool with sufficient delegation capacity to resume any interruptions in rewards outlays. 
+    If this key is compromised, the pool is compromised and must be shut down. If this key is compromised, the attacker can take over pool operations (e.g. shut-down the pool, etc.). It is important to note that even if this \say{master pool key} is compromised, the delegated stake is in no risk. To reiterate, no key, except for the user's very own, has rights to alter any votes or withdraw any bonded coins. In the event of a management key compromise, the user must simply transfer delegation rights to another pool with sufficient delegation capacity to resume any interruptions in rewards outlays. 
 \end{itemize}
 
-Note the pool operator is shielded (by the pool registry contract) from much of the complexity of managing the extra keys associated with the operation of a private staker through the staker registry. 
+Note the pool operator is shielded (by the Pool Registry contract) from much of the complexity of managing the extra keys associated with the operation of a private staker through the Staker Registry. 
 
-Note that when registering for a pool (\S\ref{pool_actions}), do not use exchange addresses for the rewards key or the block-signing keys. The operator needs to control the private key for the rewards account in order to (send a transaction and) retrieve the rewarded coins, which accumulate in the delegation contract. Needless to say, the operator needs to control the private key for the block-signing account in order to sign the blocks on their full node.   
+Note that when registering for a pool (\S\ref{pool_actions}), do not use exchange addresses for any of the keys. The operator needs to control the private keys for these accounts in order to perform pool actions such as retrieve the rewarded coins, sign the blocks, perform management actions, etc. 
 
 \subsubsection{Pool States: Broken and Active} \label{pool_states}
 
-There are two states in the pool life-cycle (Figure \ref{fig:pool_lifecycle}): \textit{broken} and \textit{active}. If the pool isn't broken, it's active. The pool starts out in the broken state, and remains so until the pool's self-bond requirements are fulfilled. 
+The staking pool life-cycle is very simple, as depicted in Figure \ref{fig:pool_lifecycle}. A staking pool can either be in the \textit{active} state or the \textbf{\textit{broken}} state. If the staking pool in the active state, it implies it is eligible to receive delegated stake and fulfill all responsibilities of a pool-operator within the protocol. The pool starts in the \textit{broken} state and remains so until the pool has been successfully initialized (via fulfillment of self-bond requirements). Furthermore, if any of the pool invariants are violated (see \S\ref{sc_design}), the pool is set to the broken state. Note that any coins still delegated to a broken pool will still be effective as stake in the system until undelegated or transferred.  
+
+\begin{figure}[ht]
+\centering
+\tikzset{elliptic state/.style={draw,ellipse}}
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',auto,transform shape,initial text={register pool}]
+  \node[initial,elliptic state] (A) {$broken$};
+  \node[elliptic state,node distance=6cm] (B) [right of=A] {$active$};
+  \path (B) edge [align=center,loop above] node {management\\functions} (A)
+        (A) edge [align=center, bend left=30] node {satisfy pool\\invariants} (B)
+        (B) edge [align=center, bend left=30] node {violate pool\\invariants} (A);
+\end{tikzpicture}
+\end{center}
+\caption{Staking pool life-cycle}
+\label{fig:pool_lifecycle}
+\end{figure}
 
 The pool is in the \textit{broken} state if any of the following conditions are true: 
 \begin{itemize}
-    \item If the coinbase address in the staker registry is set to anything other than the address of the coinbase contract deployed by the pool registry contract on pool initialization. 
-    \item If the pool registry contract is removed from the listener list for this pool. 
-    \item If the pool's self-bond requirement is violated (see \S\ref{self_bond}).
+    \item If the coinbase address in the Staker Registry is set to anything other than the address of the coinbase contract deployed by the Pool Registry contract on pool initialization. 
+    \item If the Pool Registry contract is removed from the listener list for this pool. 
+    \item If the pool's self-bond requirement in the Staker Registry is violated (see \S\ref{self_bond}).
+    \item If the pool's self-bond percentage in the Pool Registry is violated (see \S\ref{self_bond}).
 \end{itemize}
 
-In the current design, the only way a pool can violate an invariant is by violating the self-bond requirements (since the other requirements are maintained by the pool registry contract). The repercussion for leaving a pool in the \textit{broken} state (imposed on the pool operator) is the inability to generate blocks using pooled stake.
+In the current design, the only way a pool can violate an invariant is by violating the self-bond requirements (since the other requirements are maintained by the Pool Registry contract). The repercussion for leaving a pool in the \textit{broken} state (imposed on the pool operator) is the inability to generate blocks using pooled stake.
 
 \subsection{Protocol (Kernel) Responsibilities}
 Since the function of the protocol depends on the StakerRegistry contract's state, there must be some special interactions that must to coded into protocol implementation (i.e. \say{the kernel}). 
@@ -524,3 +504,7 @@ Every time a PoS staker (node operator) produces a block, the kernel must look-u
     \item the claimed coinbase (from the block header) is the registered coinbase in the StakerRegistry,
     \item and the staker is eligible to produce a block at the proposed block height. 
 \end{itemize}
+
+The enforcement of self-bond requirements is implemented in the Staker Registry contract, so all the kernel needs to do is to call the following method, $$getEffectiveStake(signingAddress, coinbaseAddress),$$
+which returns the effective stake after taking stakers self-bonded coins into consideration.
+

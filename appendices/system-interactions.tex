@@ -18,7 +18,7 @@ When the staker is ready to unbond the stake, the staker must do so across two t
 \clearpage
 
 \subsection{ADS Pool Setup}
-Figure \ref{fig:pool_setup} describes the setup of a staking pool. First, the operator must sign up with the StakerRegistry (using a dummy coinbase address). Then he must sign up in the PoolRegistry with the appropriate setup arguments; this call returns the address of the freshly deployed the coinbase contract (\S\ref{sc_design}). The operator must take the return coinbase contract address and set it as his coinbase in the StakerRegistry. The operator must also register the PoolRegistry contract as the StakerRegistryListener in the StakerRegistry, at any point after registering himself as a staker in the StakerRegistry, to complete the setup. 
+Figure \ref{fig:pool_setup} describes the setup of a staking pool. The operator must sign up with the Pool Registry (using their hot and cold keys). The Pool Registry sets up the Pool Coinbase and Pool Custodian contracts and registers the pool as a staker in the Staker Registry contract. 
 
 \begin{figure}[ht]
 \centering

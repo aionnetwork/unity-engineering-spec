@@ -9,8 +9,6 @@
     \umlcreatecall[no ddots,x=14]{PoolRegistry}{PoolCustodian}
     \begin{umlcall}[op={registerStaker(..)}, type=synchron, dt=1, return={\ }]{PoolRegistry}{StakerRegistry}
     \end{umlcall}
-    \begin{umlcall}[op={addListener(poolRegistry)}, type=synchron, dt=6, return={\ }]{PoolRegistry}{StakerRegistry}
-    \end{umlcall}
   \end{umlcall}
   
 \end{umlseqdiag}

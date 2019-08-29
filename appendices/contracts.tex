@@ -34,11 +34,9 @@ interface StakerRegistry {
     int finalizeTransfer(Address staker, int limit);
     void setSigningAddress(Address newSigningAddress);
     void setCoinbaseAddress(Address newCoinbaseAddress);
-    void addListener(Address listener);
-    void removeListener(Address listener);
 }
 
-interface PoolRegistry extends StakerRegistryListener {
+interface PoolRegistry {
     Address registerPool(Address signingAddress, int commissionRate, 
                          byte[] metaDataUrl, byte[] metaDataContentHash);
     void delegate(Address pool);
@@ -53,13 +51,9 @@ interface PoolRegistry extends StakerRegistryListener {
     void autoDelegateRewards(Address pool, Address delegator);
 }
 
-interface StakerRegistryListener {
-    void onSigningAddressChange(Address staker, Address newSigningAddress);
-    void onCoinbaseAddressChange(Address staker, Address newCoinbaseAddress);
-    void onListenerAdded(Address staker);
-    void onListenerRemoved(Address staker);
+interface PoolCoinbase { 
+    void transfer(Address recipient, long amount); 
 }
 
-interface PoolCoinbase { void transfer(Address recipient, long amount); }
-
 \end{lstlisting}
+\clearpage
