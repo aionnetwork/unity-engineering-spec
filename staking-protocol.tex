@@ -449,23 +449,22 @@ Furthermore, to keep implementation compatible for all contract callers of final
 \subsection{Key Management} \label{key_management}
 The staker and pool registries disperses system-responsibilities over several asymmetric key-pairs, to carefully refine the security requirements on each key, which is standard practice in industry.
 
-\paragraph{Staker registry symmetric-key rights} \label{km_staker} A  (private) staker required to manage the following five (5) keys, each of which correspond to a distinct function: 
+\paragraph{Staker registry symmetric-key rights} \label{km_staker} A  (private) staker required to manage the following four (4) keys, each of which correspond to a distinct function: 
 \begin{itemize}
     \item \textit{Identity key}: The address corresponding to this key becomes the identity of the staker in the Staker Registry system. This key cannot be used to perform any management actions in the context of the Staker Registry. Each identity key can only be used once to register a staker (since identities are unique in the Staker Registry). There is no mechanism to replace this key with another one.
     
-    \item \textit{Management key (cold key)}: The address corresponding to this key is recorded upon staker registration and there is no mechanism to replace this key with another one. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. This key has the following management rights:
+    \item \textit{Management key (cold key)}: The address corresponding to this key is recorded upon staker registration and there is no mechanism to replace this key with another one. This key should be kept in cold storage (HSM) at all times, and only be retrieved when management tasks need to be performed. This key has the following management rights and responsibilities:
     \begin{itemize} [label=--,nosep]
         \item Change registered coinbase address
         \item Change registered block signing address
         \item Change registered self-bond address
-        \item Set the active status of the poo
+        \item Set the active status of the pool
+        \item Bond enough coins to satisfy Staker Registry's self-bond requirements \S\ref{self_bond}. 
     \end{itemize}
     
-    \item \textit{Block-signing key (hot key)}: This key entitles it's holder the rights to produce blocks on behalf of ala stake delegated to the staker. This key needs to be kept online while connected to the Aion-Unity network, since this key is required to sign any blocks won by the staker in the course of the PoS \say{lottery}. At the moment, the guidance is to load this private key in the memory of an appropriately permissioned process, or in a commercial HSM (e.g. YubikeyHSM 2) that supports EdDSA (ED25519) signatures. If this key is compromised, the attacker can censor (deny inclusion of) transactions within the blocks supported by the delegated stake. Furthermore, block signing key can't be changed too fast (subject to a cooling period) to avoid a variant of the stake grinding attack (as described in \cite{WZS19}), where the variable that an attacker can \say{grind} is the block-signing key to give the attacker an advantageous time-to-next-block. 
+    \item \textit{Block-signing key (hot key)}: This key entitles it's holder the rights to produce blocks on behalf of the stake delegated to the staker. This key needs to be kept online while connected to the Aion-Unity network, since this key is required to sign any blocks won by the staker in the course of the PoS \say{lottery}. At the moment, the guidance is to load this private key in the memory of an appropriately permissioned process, or in a commercial HSM (e.g. YubikeyHSM 2) that supports EdDSA (ED25519) signatures. If this key is compromised, the attacker can censor (deny inclusion of) transactions within the blocks supported by the delegated stake. Furthermore, block signing key can't be changed too fast (subject to a cooling period) to avoid a variant of the stake grinding attack (as described in \cite{WZS19}), where the variable that an attacker can \say{grind} is the block-signing key to give the attacker an advantageous time-to-next-block. 
     
     \item \textit{Coinbase address}: PoS block rewards get paid out to the address corresponding to this key. If the address corresponding to this key is a smart contract, then it must be secured from known attacks on contract balances. If this address is a user account, the receiver of the rewards must secure this account appropriately.
-    
-    \item \textit{Self-bond key}: The address corresponding to this key must bond enough balance to satisfy Staker Registry's self-bond requirements \S\ref{self_bond}. 
 \end{itemize}
 
 
@@ -479,7 +478,7 @@ The staker and pool registries disperses system-responsibilities over several as
     If this key is compromised, the pool is compromised and must be shut down. If this key is compromised, the attacker can take over pool operations (e.g. shut-down the pool, etc.). It is important to note that even if this \say{master pool key} is compromised, the delegated stake is in no risk. To reiterate, no key, except for the user's very own, has rights to alter any votes or withdraw any bonded coins. In the event of a management key compromise, the user must simply transfer delegation rights to another pool with sufficient delegation capacity to resume any interruptions in rewards outlays. 
 \end{itemize}
 
-Note the pool operator is shielded (by the Pool Registry contract) from much of the complexity of managing the extra keys associated with the operation of a private staker through the Staker Registry. 
+Note that the pool operator is shielded (by the Pool Registry contract) from much of the complexity of managing the extra keys associated with the operation of a private staker through the Staker Registry. 
 
 Note that when registering for a pool (\S\ref{pool_actions}), do not use exchange addresses for any of the keys. The operator needs to control the private keys for these accounts in order to perform pool actions such as retrieve the rewarded coins, sign the blocks, perform management actions, etc. 
 
