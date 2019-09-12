@@ -2,11 +2,11 @@
 \begin{umlseqdiag}
   \umlactor[no ddots, x=2]{Delegator}
   \umlactor[no ddots]{Any User}
-  \umlobject[no ddots, fill=blue!20, x=9]{PoolRegistry}
-  \umlobject[no ddots, fill=blue!20, x=14]{StakerRegistry}
+  \umlobject[no ddots, fill=blue!20, x=10]{PoolRegistry}
+  \umlobject[no ddots, fill=blue!20, x=14.5]{StakerRegistry}
   
-  \begin{umlcall}[op={transferStake(fromPool, toPool, amount)}, type=synchron, dt=9, return={transferId}]{Delegator}{PoolRegistry}
-    \begin{umlcall}[op={transferStake(..)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+  \begin{umlcall}[op={transferDelegation(fromPool, toPool, amount)}, type=synchron, dt=9, return={transferId}]{Delegator}{PoolRegistry}
+    \begin{umlcall}[op={transferDelegation(..)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
     \end{umlcall}
   \end{umlcall}
   

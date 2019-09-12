@@ -6,7 +6,6 @@
   
   \begin{umlcall}[op={registerPool(..)}, type=synchron, dt=8, return={\ }]{PoolOperator}{PoolRegistry}
     \umlcreatecall[no ddots,x=14]{PoolRegistry}{PoolCoinbase}
-    \umlcreatecall[no ddots,x=14]{PoolRegistry}{PoolCustodian}
     \begin{umlcall}[op={registerStaker(..)}, type=synchron, dt=1, return={\ }]{PoolRegistry}{StakerRegistry}
     \end{umlcall}
   \end{umlcall}

@@ -3,7 +3,7 @@
   \umlactor[no ddots]{Delegator}
   \umlactor[no ddots, x=2]{Any User}
   \umlobject[no ddots, fill=blue!20, x=6]{PoolRegistry}
-  \umlobject[no ddots, fill=blue!20, x=11]{StakerRegistry}
+  \umlobject[no ddots, fill=blue!20, x=12]{StakerRegistry}
   
   \begin{umlfragment} [type=Delegate]
     \begin{umlcall}[op={delegate(staker) \{amount\}}, type=synchron, dt=8, return={\ }]{Delegator}{PoolRegistry}
@@ -16,8 +16,8 @@
   \end{umlcallself}
   
   \begin{umlfragment} [type=Undelegate]
-    \begin{umlcall}[op={undelegate(..) \{amount\}}, type=synchron, dt=17, return={unvoteId}]{Delegator}{PoolRegistry}
-      \begin{umlcall}[op={unvoteTo(delegator, amount)}, type=synchron, dt=4, return={unvoteId}]{PoolRegistry}{StakerRegistry}
+    \begin{umlcall}[op={undelegate(..) \{amount\}}, type=synchron, dt=17, return={undelegateId}]{Delegator}{PoolRegistry}
+      \begin{umlcall}[op={undelegateTo(delegator, amount)}, type=synchron, dt=4, return={undelegateId}]{PoolRegistry}{StakerRegistry}
       \end{umlcall}
     \end{umlcall}
     \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}

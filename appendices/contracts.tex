@@ -24,14 +24,18 @@ Following are the AVM smart contracts (extracted as Java interfaces) for the sta
 \begin{lstlisting}[language = Java , escapeinside={(*@}{@*)}]
 interface StakerRegistry {
     void registerStaker(Address identityAddress, Address managementAddress,
-                        Address signingAddress, Address coinbaseAddress, 
-                        Address selfBondAddress);
-    void vote(Address staker);
-    void unvote(Address staker, long amount);
-    void unvoteTo(Address staker, long amount, Address receiver);
-    int finalizeUnvote(Address owner, int limit);
-    void transferStake(Address fromStaker, Address toStaker, long amount);
-    int finalizeTransfer(Address staker, int limit);
+                        Address signingAddress, Address coinbaseAddress);
+    void bond(Address staker);
+    long unbond(Address staker, BigInteger amount);
+    long unbondTo(Address staker, BigInteger amount, Address receiver);
+    void finalizeUnbond(Address owner, int limit);
+    void delegate(Address staker);
+    long undelegate(Address staker, BigInteger amount);
+    long undelegateTo(Address staker, BigInteger amount, Address receiver);
+    void finalizeUndelegate(Address owner, int limit);
+    long transferDelegation(Address fromStaker, Address toStaker, 
+                            BigInteger amount);
+    void finalizeTransfer(Address staker, int limit);
     void setSigningAddress(Address newSigningAddress);
     void setCoinbaseAddress(Address newCoinbaseAddress);
 }
@@ -40,12 +44,13 @@ interface PoolRegistry {
     Address registerPool(Address signingAddress, int commissionRate, 
                          byte[] metaDataUrl, byte[] metaDataContentHash);
     void delegate(Address pool);
-    void undelegate(Address pool, long amount);
-    void redelegateRewards(Address pool);
-    void transferStake(Address fromPool, Address toPool, long amount);
-    long withdraw(Address pool);
-    int finalizeUnvote(Address owner, int limit);
-    void finalizeTransfer(long transferId);
+    long undelegate(Address pool, BigInteger amount);
+    void finalizeUndelegate(Address owner, int limit);
+    void redelegateRewards(Address pool, BigInteger amount);
+    long transferDelegation(Address fromPool, Address toPool, 
+                            BigInteger amount);
+    void finalizeTransfer(BigInteger transferId);
+    BigInteger withdraw(Address pool);
     void enableAutoRewardsDelegation(Address pool, int feePercentage);
     void disableAutoRewardsDelegation(Address pool);
     void autoDelegateRewards(Address pool, Address delegator);

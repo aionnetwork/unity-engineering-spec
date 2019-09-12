@@ -5,9 +5,9 @@ This appendix illustrates major user and cross-contract interactions, for didact
 \label{appendix:sequence_diagrams}
 
 \subsection{Private Staking}
-Figure \ref{fig:priv_staking} describes the scenario where a Staker chooses to privately bond their coins as stake (i.e. run their own node), and then after some time, unbond those coins. The staker must first register with the StakerRegistry contract. Then the staker must send a \say{vote} message (to their own address in the StakerRegistry), sending the amount to bond as the transaction amount. 
+Figure \ref{fig:priv_staking} describes the scenario where a Staker chooses to privately bond their coins as stake (i.e. run their own node), and then after some time, unbond those coins. The staker must first register with the StakerRegistry contract. Then the staker must send a \say{bond} message (to their own address in the StakerRegistry), sending the amount to bond as the transaction amount. 
 
-When the staker is ready to unbond the stake, the staker must do so across two transactions. First, the staker must send the unvote (with the amount to unvote) transaction, which commits the stake into a \textit{thawing} state. This function returns an \textit{unvoteId}, which uniquely identifies this unvote operation. After the thawing period has elapsed (\S\ref{stake_concerns}), at any time, any user in the system can call the finalize function, to release the thawed coins back to the staker. 
+When the staker is ready to unbond the stake, the staker must do so across two transactions. First, the staker must send the unbond (with the amount to unbond) transaction, which commits the stake into a \textit{thawing} state. This function returns an \textit{unbondId}, which uniquely identifies this unbond operation. After the thawing period has elapsed (\S\ref{stake_concerns}), at any time, any user in the system can call the finalize function, to release the thawed coins back to the staker. 
 
 \begin{figure}[ht]
 \centering
@@ -18,7 +18,7 @@ When the staker is ready to unbond the stake, the staker must do so across two t
 \clearpage
 
 \subsection{ADS Pool Setup}
-Figure \ref{fig:pool_setup} describes the setup of a staking pool. The operator must sign up with the Pool Registry (using their hot and cold keys). The Pool Registry sets up the Pool Coinbase and Pool Custodian contracts and registers the pool as a staker in the Staker Registry contract. 
+Figure \ref{fig:pool_setup} describes the setup of a staking pool. The operator must sign up with the Pool Registry (using their hot and cold keys). The Pool Registry sets up the Pool Coinbase contract and registers the pool as a staker in the Staker Registry contract. 
 
 \begin{figure}[ht]
 \centering
@@ -34,7 +34,7 @@ Figure \ref{fig:delegation} illustrates the mechanism of delegation and undelega
 
 In order to delegate stake, a user must send their coins to the PoolRegistry in a delegate transaction. When delegate is invoked, the PoolRegistry records the delegation and adds the stake to the pool's balance in the StakerRegistry; to the staking registry, the pool looks like one big staker. 
 
-The undelegation of stake is a two-step process (since unbonding of stake is involved). When a user calls the undelegate function in the PoolRegistry, an unvoteTo is triggered in the StakerRegistry, which returns the corresponding unvoteId, which uniquely identifies the thawing of this parcel of stake. After the thawing period has elapsed, any user can call the finalizeUnvote function, either through the PoolRegistry or directly in the StakerRegistry with the unvoteId of the delegator, to release the liquid coins back to their account. 
+The undelegation of stake is a two-step process (since unbonding of stake is involved). When a user calls the undelegate function in the PoolRegistry, an unbondTo is triggered in the StakerRegistry, which returns the corresponding unbondId that uniquely identifies the thawing of this parcel of stake. After the thawing period has elapsed, any user can call the finalizeUndelegate function through the PoolRegistry to release the liquid coins back to their account. 
 
 \begin{figure}[ht]
 \centering
