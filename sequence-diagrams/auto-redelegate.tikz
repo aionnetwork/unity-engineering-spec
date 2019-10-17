@@ -5,9 +5,6 @@
   \umlobject[no ddots, fill=blue!20, x=12]{PoolRegistry}
   
   \begin{umlfragment} [type=Setup]
-    \begin{umlcall}[op={delegateAndEnableAutoRedelegation(pool, fee) \{amount\}}, type=synchron, dt=12, return={\ }]{Delegator}{PoolRegistry}
-    \end{umlcall}
-    \umlfpart[OR After Delegation]
     \begin{umlcall}[op={delegate(pool) \{amount\}}, type=synchron, dt=8, return={\ }]{Delegator}{PoolRegistry}
     \end{umlcall}
     \begin{umlcall}[op={enableAutoRedelegation(pool, fee)}, type=synchron, dt=4, return={\ }]{Delegator}{PoolRegistry}
@@ -15,10 +12,8 @@
   \end{umlfragment}
   
   \begin{umlfragment} [type=Redelegate Rewards]
-    \begin{umlcall}[op={autoRedelegate(pool, delegator)}, type=synchron, dt=47, return={\ }]{Any User}{PoolRegistry}
-      \begin{umlcall}[op={fee}, type=asynchron, dt=4, return={\ }]{PoolRegistry}{Any User}
-      \end{umlcall}
-      \begin{umlcallself} [op={vote delegator rewards}, type=asynchron, dt=2]{PoolRegistry}
+    \begin{umlcall}[op={autoRedelegateRewards(pool, delegator)}, type=synchron, dt=26.5, return={fee}]{Any User}{PoolRegistry}
+      \begin{umlcallself} [op={(rewards - fee) delegated}, type=asynchron, dt=2]{PoolRegistry}
       \end{umlcallself}
     \end{umlcall}
   \end{umlfragment}

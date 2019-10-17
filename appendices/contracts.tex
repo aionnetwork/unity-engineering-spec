@@ -23,19 +23,17 @@ Following are the AVM smart contracts (extracted as Java interfaces) for the sta
 
 \begin{lstlisting}[language = Java , escapeinside={(*@}{@*)}]
 interface StakerRegistry {
-    void registerStaker(Address identityAddress, Address managementAddress,
-                        Address signingAddress, Address coinbaseAddress);
+    void registerStaker(Address identityAddress, Address signingAddress,
+                        Address coinbaseAddress);
     void bond(Address staker);
-    long unbond(Address staker, BigInteger amount);
-    long unbondTo(Address staker, BigInteger amount, Address receiver);
-    void finalizeUnbond(Address owner, int limit);
-    void delegate(Address staker);
-    long undelegate(Address staker, BigInteger amount);
-    long undelegateTo(Address staker, BigInteger amount, Address receiver);
-    void finalizeUndelegate(Address owner, int limit);
-    long transferDelegation(Address fromStaker, Address toStaker, 
-                            BigInteger amount);
-    void finalizeTransfer(Address staker, int limit);
+    long unbond(Address staker, BigInteger amount, BigInteger fee);
+    long unbondTo(Address staker, BigInteger amount, Address receiver, 
+                  BigInteger fee);
+    long transferStake(Address fromStaker, Address toStaker, 
+                       BigInteger amount, BigInteger fee);
+    void finalizeUnbond(long id);
+    void finalizeTransfer(long id);
+    void setState(Address staker, boolean newState)
     void setSigningAddress(Address newSigningAddress);
     void setCoinbaseAddress(Address newCoinbaseAddress);
 }
@@ -44,20 +42,24 @@ interface PoolRegistry {
     Address registerPool(Address signingAddress, int commissionRate, 
                          byte[] metaDataUrl, byte[] metaDataContentHash);
     void delegate(Address pool);
-    long undelegate(Address pool, BigInteger amount);
-    void finalizeUndelegate(Address owner, int limit);
-    void redelegateRewards(Address pool, BigInteger amount);
+    long undelegate(Address pool, BigInteger amount, BigInteger fee);
+    void finalizeUndelegate(long undelegateId);
+    void redelegateRewards(Address pool);
     long transferDelegation(Address fromPool, Address toPool, 
-                            BigInteger amount);
-    void finalizeTransfer(BigInteger transferId);
-    BigInteger withdraw(Address pool);
+                            BigInteger amount, BigInteger fee);
+    void finalizeTransfer(long transferId);
+    BigInteger withdrawRewards(Address pool);
     void enableAutoRewardsDelegation(Address pool, int feePercentage);
     void disableAutoRewardsDelegation(Address pool);
     void autoDelegateRewards(Address pool, Address delegator);
+    long requestCommissionRateChange(int newCommissionRate);
+    void finalizeCommissionRateChange(long id);
+    void updateMetaData(byte[] newMetaDataUrl, byte[] newMetaDataContentHash);
+    void setSigningAddress(Address newAddress);
 }
 
 interface PoolCoinbase { 
-    void transfer(Address recipient, long amount); 
+    void transfer(BigInteger amount); 
 }
 
 \end{lstlisting}

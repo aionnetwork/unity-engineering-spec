@@ -1,0 +1,22 @@
+\begin{tikzpicture}
+\begin{umlseqdiag}
+  \umlactor[no ddots]{Any User}
+  \umlactor[no ddots, x=2]{Staker}
+  \umlobject[no ddots, fill=blue!20, x=10]{StakerRegistry}
+  
+  \begin{umlcallself} [op={coins staked}, type=asynchron, dt=4.5]{StakerRegistry}
+  \end{umlcallself}
+    
+  \begin{umlfragment} [type=Unbond]
+    \begin{umlcall}[op={unbond(staker, amount, fee)}, type=synchron, dt=16.5, return={unbondId}]{Staker}{StakerRegistry}
+    \end{umlcall}
+    \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}
+    \end{umlcallself}
+    \begin{umlcall}[op={finalizeUnbond(unbondId)}, type=synchron, dt=30, return={fee}]{Any User}{StakerRegistry}
+    \begin{umlcall}[op={\{bonded coins - fee \}}, type=asynchron, dt=3.5, return={\ }]{StakerRegistry}{Staker}
+     \end{umlcall}
+    \end{umlcall}
+  \end{umlfragment}
+  
+\end{umlseqdiag}
+\end{tikzpicture}

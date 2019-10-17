@@ -5,16 +5,18 @@
   \umlobject[no ddots, fill=blue!20, x=10]{PoolRegistry}
   \umlobject[no ddots, fill=blue!20, x=14.5]{StakerRegistry}
   
-  \begin{umlcall}[op={transferDelegation(fromPool, toPool, amount)}, type=synchron, dt=9, return={transferId}]{Delegator}{PoolRegistry}
-    \begin{umlcall}[op={transferDelegation(..)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+  \begin{umlcall}[op={transferDelegation(..)\footnotemark}, type=synchron, dt=9, return={transferId}]{Delegator}{PoolRegistry}
+    \begin{umlcall}[op={transferBond(..)\footnotemark}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
     \end{umlcall}
   \end{umlcall}
   
   \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=5]{StakerRegistry}
   \end{umlcallself}
     
-  \begin{umlcall}[op={finalizeTransfer(transferId)}, type=synchron, dt=27.5, return={\ }]{Any User}{PoolRegistry}
-    \begin{umlcall}[op={finalizeTransfer(..)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+  \begin{umlcall}[op={finalizeTransfer(transferId)}, type=synchron, dt=27.5, return={fee}]{Any User}{PoolRegistry}
+    \begin{umlcall}[op={finalizeTransfer(..)\footnotemark}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+        \begin{umlcallself} [op={(amount - fee) transferred}, type=asynchron, dt=2]{StakerRegistry}
+        \end{umlcallself}
     \end{umlcall}
   \end{umlcall}
 \end{umlseqdiag}

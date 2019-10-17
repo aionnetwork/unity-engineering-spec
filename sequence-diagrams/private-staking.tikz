@@ -5,26 +5,17 @@
   \umlobject[no ddots, fill=blue!20, x=10]{StakerRegistry}
   
   \begin{umlfragment} [type=Setup]
-    \begin{umlcall}[op={registerStaker(..)}, type=synchron, dt=10, return={\ }]{Staker}{StakerRegistry}
+    \begin{umlcall}[op={registerStaker(..)\footnotemark \{amount\}}, type=synchron, dt=10, return={\ }]{Staker}{StakerRegistry}
     \end{umlcall}
   \end{umlfragment}
   
-  \begin{umlfragment} [type=Stake]
-    \begin{umlcall}[op={vote(staker) \{amount\}}, type=synchron, dt=8.5, return={\ }]{Staker}{StakerRegistry}
+  \begin{umlfragment} [type=Bond]
+    \begin{umlcall}[op={bond(staker) \{amount\}}, type=synchron, dt=8.5, return={\ }]{Staker}{StakerRegistry}
     \end{umlcall}
   \end{umlfragment}
   
-  \begin{umlcallself} [op={coins staked}, type=asynchron, dt=5]{StakerRegistry}
+  \begin{umlcallself} [op={coins staked}, type=asynchron, dt=4.5]{StakerRegistry}
   \end{umlcallself}
-    
-  \begin{umlfragment} [type=Unstake]
-    \begin{umlcall}[op={unbond(staker, amount)}, type=synchron, dt=17.5, return={unbondId}]{Staker}{StakerRegistry}
-    \end{umlcall}
-    \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}
-    \end{umlcallself}
-    \begin{umlcall}[op={finalizeUunbond(unbondId)}, type=synchron, dt=54.5, return={\ }]{Any User}{StakerRegistry}
-    \end{umlcall}
-  \end{umlfragment}
-  
 \end{umlseqdiag}
 \end{tikzpicture}
+

@@ -1,13 +1,11 @@
 \begin{tikzpicture}
 \begin{umlseqdiag}
   \umlactor[no ddots]{Delegator}
-  \umlobject[no ddots, fill=blue!20, x=5]{PoolRegistry}
-  \umlobject[no ddots, x=11]{PoolCoinbase}
+  \umlobject[no ddots, fill=blue!20, x=7]{PoolRegistry}
+  \umlobject[no ddots, x=12]{PoolCoinbase}
   
-  \begin{umlcall}[op={withdraw(staker, amount)}, type=synchron, dt=8, return={\ }]{Delegator}{PoolRegistry}
-     \begin{umlcall}[op={transfer(amount)}, type=synchron, dt=4, return={\ }]{PoolRegistry}{PoolCoinbase}
-     \end{umlcall}
-     \begin{umlcall}[op={amount}, type=asynchron, dt=4, return={\ }]{PoolRegistry}{Delegator}
+  \begin{umlcall}[op={withdrawRewards(staker)}, type=synchron, dt=8, return={rewards}]{Delegator}{PoolRegistry}
+     \begin{umlcall}[op={transfer(balance)}, type=synchron, dt=4, return={\ }]{PoolRegistry}{PoolCoinbase}
      \end{umlcall}
   \end{umlcall}
 \end{umlseqdiag}

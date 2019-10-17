@@ -4,18 +4,29 @@ This appendix illustrates major user and cross-contract interactions, for didact
 
 \label{appendix:sequence_diagrams}
 
-\subsection{Private Staking}
-Figure \ref{fig:priv_staking} describes the scenario where a Staker chooses to privately bond their coins as stake (i.e. run their own node), and then after some time, unbond those coins. The staker must first register with the StakerRegistry contract. Then the staker must send a \say{bond} message (to their own address in the StakerRegistry), sending the amount to bond as the transaction amount. 
-
-When the staker is ready to unbond the stake, the staker must do so across two transactions. First, the staker must send the unbond (with the amount to unbond) transaction, which commits the stake into a \textit{thawing} state. This function returns an \textit{unbondId}, which uniquely identifies this unbond operation. After the thawing period has elapsed (\S\ref{stake_concerns}), at any time, any user in the system can call the finalize function, to release the thawed coins back to the staker. 
+\subsection{Private Staking (Bonding)}
+Figure \ref{fig:priv_staking} describes the scenario where a Staker chooses to privately bond their coins as stake (i.e. run their own node). The staker must first register with the StakerRegistry contract (sending at-least the minimum self bond amount). Then the staker may send a \say{bond} message (to their own address in the StakerRegistry), sending the amount to bond as the transaction amount. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics{sequence-diagrams/private-staking.tikz}
-\caption{Private staking in Aion-Unity}
+\caption{Private staking (bonding) in Aion-Unity}
 \label{fig:priv_staking}
 \end{figure}
+\footnotetext[2]{registerStaker(identityAddress, signingAddress, coinbaseAddress)}
 \clearpage
+
+\subsection{Private Staking (Unbonding)}
+Figure \ref{fig:priv_unstaking} describes the scenario where a Staker chooses to privately bond their coins as stake (i.e. run their own node), and then after some time, unbond those coins. When the staker is ready to unbond the stake, the staker must do so across two transactions. First, the staker must send the unbond (with the amount to unbond) transaction, which commits the stake into a \textit{thawing} state. This function returns an \textit{unbondId}, which uniquely identifies this unbond operation. After the thawing period has elapsed (\S\ref{parameters_staker_registry}), at any time, a user in the system can call the finalize function, to release the thawed coins back to the staker. 
+
+\begin{figure}[ht]
+\centering
+\includegraphics{sequence-diagrams/private-unstaking.tikz}
+\caption{Private staking (unbonding) in Aion-Unity}
+\label{fig:priv_unstaking}
+\end{figure}
+\clearpage
+
 
 \subsection{ADS Pool Setup}
 Figure \ref{fig:pool_setup} describes the setup of a staking pool. The operator must sign up with the Pool Registry (using their hot and cold keys). The Pool Registry sets up the Pool Coinbase contract and registers the pool as a staker in the Staker Registry contract. 
@@ -26,15 +37,14 @@ Figure \ref{fig:pool_setup} describes the setup of a staking pool. The operator 
 \caption{ADS pool setup in Aion-Unity}
 \label{fig:pool_setup}
 \end{figure}
+\footnotetext[3]{registerStaker(identityAddress, signingAddress, coinbaseAddress)}
+\footnotetext[4]{registerPool(signingAddress, commissionRate, metaDataUrl, metaDataContentHash)}
 \clearpage
 
 \subsection{Delegation to an ADS Pool}
+Figure \ref{fig:delegation} illustrates the mechanism of delegation and undelegation of stake to an ADS pool. In order to delegate stake, a user must send their coins to the PoolRegistry in a delegate transaction. When delegate is invoked, the PoolRegistry records the delegation and adds the stake to the pool's balance in the StakerRegistry; to the staking registry, the pool looks like one big staker. The undelegation of stake is a two-step process (since unbonding of stake is involved). 
 
-Figure \ref{fig:delegation} illustrates the mechanism of delegation and undelegation of stake to an ADS pool. Note that the delegator only has to interact with the PoolRegistry contract to complete their delegation workflow. 
-
-In order to delegate stake, a user must send their coins to the PoolRegistry in a delegate transaction. When delegate is invoked, the PoolRegistry records the delegation and adds the stake to the pool's balance in the StakerRegistry; to the staking registry, the pool looks like one big staker. 
-
-The undelegation of stake is a two-step process (since unbonding of stake is involved). When a user calls the undelegate function in the PoolRegistry, an unbondTo is triggered in the StakerRegistry, which returns the corresponding unbondId that uniquely identifies the thawing of this parcel of stake. After the thawing period has elapsed, any user can call the finalizeUndelegate function through the PoolRegistry to release the liquid coins back to their account. 
+When a user calls the undelegate function in the PoolRegistry, an unbondTo is triggered in the StakerRegistry, which returns the corresponding unbondId that uniquely identifies the thawing of this parcel of stake. After the thawing period has elapsed, any user can call the finalizeUndelegate function through the PoolRegistry to release the liquid coins back to their account. 
 
 \begin{figure}[ht]
 \centering
@@ -42,11 +52,15 @@ The undelegation of stake is a two-step process (since unbonding of stake is inv
 \caption{ADS delegation and undelegation in Aion-Unity}
 \label{fig:delegation}
 \end{figure}
+\footnotetext[5]{unbondTo(staker, amount, receiver, fee)}
+\footnotetext[6]{undelegate(pool, amount, fee)}
+\footnotetext[7]{finalizeUnbond(unbondId)}
+\footnotetext[8]{finalizeUndelegate(undelegateId)}
 \clearpage
 
 \subsection{Auto-Delegation of Rewards}
 
-Figure \ref{fig:redelegation} demonstrates the  auto rewards delegation feature in ADS. A user can enable this feature either at the moment of a delegation, or after the fact as a separate transaction. Once enabled, this feature enables any user to call the auto-redelegate function to commit a delegator's earned rewards as stake. At any point, the delegator can disable this feature. 
+Figure \ref{fig:redelegation} demonstrates the  auto rewards delegation feature in ADS. Once enabled, this feature enables any user to call the auto-redelegate function to commit a delegator's earned rewards as stake. At any point, the delegator can disable this feature. 
 
 \begin{figure}[ht]
 \centering
@@ -68,9 +82,12 @@ A delegator must initiate a transfer of stake between stakers (pools) at PoolReg
 \caption{Stake transfer feature in Aion-Unity}
 \label{fig:delegation_transfer}
 \end{figure}
+\footnotetext[9]{transferBond(fromStaker, toStaker, amount, fee)}
+\footnotetext[10]{transferDelegation(fromPool, toPool, amount, fee)}
+\footnotetext[11]{finalizeTransfer(transferId)}
 \clearpage
 
-\subsection{Delegator Withdrawal}
+\subsection{Rewards Withdrawal}
 
 Figure \ref{fig:withdrawal} demonstrates a withdrawal of rewards earned by a delegator. Rewards are continually withdrawn from a pool's coinbase contract any time the stake apportionment in the pool changes (via a delegation, undelegation, etc.) and managed by the PoolRegistry (see \S\ref{f1-rewards} for details). A withdraw is yet another trigger for the pool's coinbase to be emptied of accumulated rewards (if any exist). Then, the F1 rewards sharing algorithm is invoked to compute the rewards owed to the delegator, which are promptly disbursed before winding down the transaction. 
 

@@ -1,13 +1,14 @@
 \begin{tikzpicture}
 \begin{umlseqdiag}
-  \umlactor[no ddots]{Delegator}
-  \umlactor[no ddots, x=2]{Any User}
-  \umlobject[no ddots, fill=blue!20, x=6]{PoolRegistry}
+  \umlactor[no ddots, x=0]{Any User}
+  \umlactor[no ddots, x=2]{Delegator}
+  
+  \umlobject[no ddots, fill=blue!20, x=8]{PoolRegistry}
   \umlobject[no ddots, fill=blue!20, x=12]{StakerRegistry}
   
   \begin{umlfragment} [type=Delegate]
     \begin{umlcall}[op={delegate(staker) \{amount\}}, type=synchron, dt=8, return={\ }]{Delegator}{PoolRegistry}
-       \begin{umlcall}[op={vote(staker) \{amount\}}, type=synchron, dt=4, return={\ }]{PoolRegistry}{StakerRegistry}
+       \begin{umlcall}[op={bond(staker) \{amount\}}, type=synchron, dt=4, return={\ }]{PoolRegistry}{StakerRegistry}
        \end{umlcall}
     \end{umlcall}
   \end{umlfragment}
@@ -16,14 +17,16 @@
   \end{umlcallself}
   
   \begin{umlfragment} [type=Undelegate]
-    \begin{umlcall}[op={undelegate(..) \{amount\}}, type=synchron, dt=17, return={undelegateId}]{Delegator}{PoolRegistry}
-      \begin{umlcall}[op={undelegateTo(delegator, amount)}, type=synchron, dt=4, return={undelegateId}]{PoolRegistry}{StakerRegistry}
+    \begin{umlcall}[op={undelegate(..)\footnotemark}, type=synchron, dt=17, return={undelegateId}]{Delegator}{PoolRegistry}
+      \begin{umlcall}[op={unbondTo(..)\footnotemark}, type=synchron, dt=4, return={unbondId}]{PoolRegistry}{StakerRegistry}
       \end{umlcall}
     \end{umlcall}
     \begin{umlcallself} [op={lockout elapsed}, type=asynchron, dt=3]{StakerRegistry}
     \end{umlcallself}
-    \begin{umlcall}[op={finalizeUnvote(..)}, type=synchron, dt=50, return={\ }]{Any User}{PoolRegistry}
-      \begin{umlcall}[op={finalizeUnvote(..)}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+    \begin{umlcall}[op={finalizeUndelegate(..)\footnotemark}, type=synchron, dt=50, return={fee}]{Any User}{PoolRegistry}
+      \begin{umlcall}[op={finalizeUnbond(..)\footnotemark}, type=synchron, return={\ }]{PoolRegistry}{StakerRegistry}
+      \end{umlcall}
+      \begin{umlcall}[op={\{(undelegated amount) - fee \}}, type=asynchron, dt=3.5, return={\ }]{PoolRegistry}{Delegator}
       \end{umlcall}
     \end{umlcall}
   \end{umlfragment}
